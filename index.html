@@ -13,12 +13,20 @@
             --stress-medium: #FFD93D;
             --stress-high: #FF6B6B;
             --bg-color: #f5f7fa;
+            --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            line-height: 1.6;
             overflow-x: hidden;
         }
 
@@ -33,46 +41,44 @@
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: var(--card-shadow);
             transition: transform 0.3s ease;
         }
 
-        .modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 400px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-            touch-action: pan-y;
+        .card:hover {
+            transform: translateY(-5px);
         }
 
-        .modal-content {
-            padding: 20px;
-            max-height: 80vh;
-            overflow-y: auto;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
         }
 
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
+        h1, h2, h3 {
+            color: #2c3e50;
         }
 
-        @media (min-width: 768px) {
-            .grid-container {
-                display: grid;
-                grid-template-columns: 2fr 1fr;
-                gap: 20px;
-            }
+        .real-time {
+            text-align: right;
+        }
+
+        #current-stress {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .status {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+            margin: 20px 0;
         }
 
         .stress-meter {
@@ -90,9 +96,143 @@
             position: absolute;
             width: 3px;
             height: 30px;
-            background: #000;
+            background: #2c3e50;
             top: -5px;
             transition: left 0.5s ease;
+        }
+
+        .param-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .param-item {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .param-item label {
+            display: block;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .value {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .btn-detail {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-detail:hover {
+            background-color: #3a7bc8;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 101;
+            display: none;
+            overflow: hidden;
+            touch-action: pan-y;
+        }
+
+        .modal-content {
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .analysis-item {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            .grid-container {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 20px;
+            }
+            
+            .card {
+                padding: 25px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #current-stress {
+                font-size: 2rem;
+            }
+            
+            .value {
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
@@ -127,67 +267,50 @@
                         <div class="value" id="peak-stress">0μS</div>
                     </div>
                 </div>
-                <button class="btn-detail" onclick="showDetailModal()">View Details</button>
+                <button class="btn-detail" id="detail-btn">View Details</button>
             </div>
         </div>
     </div>
 
     <!-- Modal -->
-    <div class="modal-overlay" id="modal-overlay" style="display: none;"></div>
-    <div class="modal" id="detail-modal" style="display: none;">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal" id="detail-modal">
         <div class="modal-content">
-            <h3>Detailed Analysis</h3>
-            <div class="analysis-grid">
-                <!-- Detail content will be populated here -->
+            <div class="modal-header">
+                <h3>Detailed Analysis</h3>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div class="analysis-grid" id="analysis-grid">
+                <!-- Content will be populated by JavaScript -->
             </div>
         </div>
     </div>
 
     <script>
+        // DOM Elements
+        const modal = document.getElementById('detail-modal');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const closeModalBtn = document.getElementById('close-modal');
+        const detailBtn = document.getElementById('detail-btn');
+        const analysisGrid = document.getElementById('analysis-grid');
+        
+        // Chart and Data Variables
         let chart;
         let touchStartY = 0;
-        let modal = document.getElementById('detail-modal');
-        let modalOverlay = document.getElementById('modal-overlay');
+        let isDraggingModal = false;
+        let lastData = null;
 
-        // Touch handling for modal
-        modal.addEventListener('touchstart', e => {
-            touchStartY = e.touches[0].clientY;
-        }, {passive: true});
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            setupEventListeners();
+            loadInitialData();
+        });
 
-        modal.addEventListener('touchmove', e => {
-            const touchY = e.touches[0].clientY;
-            const deltaY = touchY - touchStartY;
-            
-            if(deltaY > 0) {
-                modal.style.transform = `translate(-50%, ${-50 + deltaY/2}%)`;
-            }
-        }, {passive: true});
-
-        modal.addEventListener('touchend', e => {
-            const touchEndY = e.changedTouches[0].clientY;
-            const deltaY = touchEndY - touchStartY;
-            
-            if(deltaY > 100) {
-                hideDetailModal();
-            } else {
-                modal.style.transform = 'translate(-50%, -50%)';
-            }
-        }, {passive: true});
-
-        function showDetailModal() {
-            modal.style.display = 'block';
-            modalOverlay.style.display = 'block';
-            populateModalContent();
-        }
-
-        function hideDetailModal() {
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.display = 'none';
-            modalOverlay.style.display = 'none';
-        }
-
-        async function initChart() {
+        function initChart() {
             const ctx = document.getElementById('gsrChart').getContext('2d');
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+            
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -195,16 +318,27 @@
                     datasets: [{
                         label: 'Skin Conductance (μS)',
                         data: [],
-                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--primary'),
+                        borderColor: primaryColor,
+                        borderWidth: 2,
                         tension: 0.4,
                         fill: true,
-                        backgroundColor: 'rgba(74, 144, 226, 0.1)'
+                        backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                        pointBackgroundColor: primaryColor,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
                         annotation: {
                             annotations: {
                                 stressThreshold: {
@@ -213,63 +347,271 @@
                                     yMax: 5,
                                     borderColor: '#FF6B6B',
                                     borderWidth: 2,
-                                    borderDash: [5,5]
+                                    borderDash: [5, 5],
+                                    label: {
+                                        content: 'Stress Threshold',
+                                        enabled: true,
+                                        position: 'left'
+                                    }
                                 }
                             }
                         }
                     },
                     scales: {
                         y: {
-                            title: { display: true, text: 'μS' },
-                            suggestedMin: 0,
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'μS',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
                             suggestedMax: 20
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
                         }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
                     }
                 }
             });
+        }
 
-            await updateData();
-            setInterval(updateData, 30000);
+        function setupEventListeners() {
+            // Modal controls
+            detailBtn.addEventListener('click', showDetailModal);
+            closeModalBtn.addEventListener('click', hideDetailModal);
+            modalOverlay.addEventListener('click', hideDetailModal);
+            
+            // Touch events for swipe to close
+            modal.addEventListener('touchstart', handleTouchStart, { passive: true });
+            modal.addEventListener('touchmove', handleTouchMove, { passive: true });
+            modal.addEventListener('touchend', handleTouchEnd, { passive: true });
+            
+            // Keyboard accessibility
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.style.display === 'block') {
+                    hideDetailModal();
+                }
+            });
+        }
+
+        function handleTouchStart(e) {
+            touchStartY = e.touches[0].clientY;
+            isDraggingModal = true;
+            modal.style.transition = 'none';
+        }
+
+        function handleTouchMove(e) {
+            if (!isDraggingModal) return;
+            
+            const touchY = e.touches[0].clientY;
+            const deltaY = touchY - touchStartY;
+            
+            if (deltaY > 0) {
+                const translateY = Math.min(deltaY, 150);
+                modal.style.transform = `translate(-50%, calc(-50% + ${translateY}px)`;
+                modal.style.opacity = 1 - (translateY / 300);
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (!isDraggingModal) return;
+            
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaY = touchEndY - touchStartY;
+            
+            if (deltaY > 100) {
+                hideDetailModal();
+            } else {
+                resetModalPosition();
+            }
+            
+            isDraggingModal = false;
+        }
+
+        function resetModalPosition() {
+            modal.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.opacity = 1;
+        }
+
+        function showDetailModal() {
+            modalOverlay.style.display = 'block';
+            modal.style.display = 'block';
+            
+            // Trigger reflow to enable animation
+            void modalOverlay.offsetWidth;
+            
+            modalOverlay.style.opacity = '1';
+            populateModalContent();
+            
+            // Lock body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideDetailModal() {
+            modalOverlay.style.opacity = '0';
+            modal.style.transform = 'translate(-50%, -50%) scale(0.95)';
+            modal.style.opacity = '0';
+            
+            setTimeout(() => {
+                modalOverlay.style.display = 'none';
+                modal.style.display = 'none';
+                resetModalPosition();
+                document.body.style.overflow = '';
+            }, 300);
+        }
+
+        function populateModalContent() {
+            const history = safeParse(localStorage.getItem('gsrHistory'));
+            
+            if (history.length === 0) {
+                analysisGrid.innerHTML = '<p>No historical data available</p>';
+                return;
+            }
+            
+            const stats = calculateStatistics(history);
+            
+            const content = `
+                <div class="analysis-item">
+                    <label><i class="fas fa-chart-line"></i> Average SCL</label>
+                    <div class="value">${stats.avgSCL.toFixed(2)} μS</div>
+                    <small>Normal range: 1-5 μS</small>
+                </div>
+                <div class="analysis-item">
+                    <label><i class="fas fa-bolt"></i> Total SCR Events</label>
+                    <div class="value">${stats.totalSCREvents}</div>
+                    <small>Normal: &lt;3/min</small>
+                </div>
+                <div class="analysis-item">
+                    <label><i class="fas fa-clock"></i> Stress Duration</label>
+                    <div class="value">${stats.stressDuration} mins</div>
+                    <small>Today</small>
+                </div>
+                <div class="analysis-item">
+                    <label><i class="fas fa-chart-pie"></i> Stress Distribution</label>
+                    <div class="value">${stats.stressPercentage}% of time</div>
+                    <small>Above threshold</small>
+                </div>
+            `;
+            
+            analysisGrid.innerHTML = content;
+        }
+
+        function calculateStatistics(history) {
+            const now = Date.now();
+            const todayData = history.filter(item => 
+                now - item.timestamp < 24 * 60 * 60 * 1000);
+            
+            if (todayData.length === 0) return {
+                avgSCL: 0,
+                totalSCREvents: 0,
+                stressDuration: 0,
+                stressPercentage: 0
+            };
+            
+            const avgSCL = todayData.reduce((sum, item) => sum + item.conductance, 0) / todayData.length;
+            const totalSCREvents = todayData.reduce((sum, item) => sum + (item.scrEvents || 0), 0);
+            const stressData = todayData.filter(item => item.conductance > 5);
+            const stressDuration = Math.round(stressData.length * 5); // 5 minutes per reading
+            const stressPercentage = Math.round((stressData.length / todayData.length) * 100);
+            
+            return {
+                avgSCL,
+                totalSCREvents,
+                stressDuration,
+                stressPercentage
+            };
+        }
+
+        function safeParse(json) {
+            try {
+                return JSON.parse(json) || [];
+            } catch {
+                return [];
+            }
+        }
+
+        async function loadInitialData() {
+            try {
+                // Try to load from server first
+                await updateData();
+                
+                // If no data from server, check localStorage
+                if (!lastData) {
+                    const history = safeParse(localStorage.getItem('gsrHistory'));
+                    if (history.length > 0) {
+                        lastData = history[history.length - 1];
+                        updateUI(lastData);
+                        document.getElementById('current-status').textContent = 'Using Local Data';
+                    }
+                }
+            } catch (error) {
+                console.error('Initial data load failed:', error);
+            }
+            
+            // Start regular updates
+            setInterval(updateData, 1000);
         }
 
         async function updateData() {
             try {
                 const response = await fetch('./data/gsr.json?t=' + Date.now());
-                if(!response.ok) throw new Error('Failed to fetch');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const rawData = await response.json();
-                const data = processData(rawData);
+                lastData = processData(rawData);
                 
-                updateChart(data);
-                updateUI(data);
-                updateHistoricalData(data);
+                updateChart(lastData);
+                updateUI(lastData);
+                updateHistoricalData(lastData);
                 
             } catch (error) {
+                console.error('Failed to update data:', error);
                 handleOfflineMode();
             }
         }
 
         function processData(raw) {
-            // Menambahkan analisis berdasarkan literatur (Boucsein, 2012)
-            const processed = {
-                timestamp: raw.timestamp || Date.now(),
-                conductance: raw.conductance || 0,
-                stressLevel: raw.stress_level || calculateStressLevel(raw.conductance),
-                scrEvents: raw.scr_events || calculateSCREvents(raw.conductance),
-                sclStatus: raw.scl_status || classifySCL(raw.conductance)
+            const conductance = raw.conductance || 0;
+            const timestamp = raw.timestamp || Date.now();
+            
+            // Calculate derived metrics based on literature (Boucsein, 2012)
+            return {
+                timestamp,
+                conductance,
+                stressLevel: calculateStressLevel(conductance),
+                scrEvents: calculateSCREvents(conductance),
+                sclStatus: classifySCL(conductance)
             };
-            return processed;
         }
 
         function calculateStressLevel(conductance) {
-            // Formula berdasarkan studi Healey & Picard (2005)
+            // Formula based on Healey & Picard (2005)
             return Math.min(100, Math.max(0, (conductance - 1) / 0.19));
         }
 
+        function calculateSCREvents(conductance) {
+            // Simulate SCR events based on conductance fluctuations
+            return Math.floor(Math.random() * (conductance > 5 ? 5 : 3));
+        }
+
         function classifySCL(conductance) {
-            if(conductance < 2) return 'Relaxed';
-            if(conductance < 5) return 'Normal';
-            if(conductance < 10) return 'Stressed';
+            // Classification based on Dawson et al. (2011)
+            if (conductance < 2) return 'Relaxed';
+            if (conductance < 5) return 'Normal';
+            if (conductance < 10) return 'Stressed';
             return 'High Stress';
         }
 
@@ -277,10 +619,13 @@
             const labels = chart.data.labels;
             const dataset = chart.data.datasets[0].data;
             
-            labels.push(new Date(data.timestamp).toLocaleTimeString());
+            // Format time as HH:MM:SS
+            const timeStr = new Date(data.timestamp).toLocaleTimeString();
+            labels.push(timeStr);
             dataset.push(data.conductance);
             
-            if(labels.length > 12) {
+            // Keep only the last 12 data points
+            if (labels.length > 12) {
                 labels.shift();
                 dataset.shift();
             }
@@ -289,85 +634,72 @@
         }
 
         function updateUI(data) {
-            document.getElementById('current-stress').textContent = data.stressLevel.toFixed(1) + '%';
-            document.getElementById('current-status').textContent = data.sclStatus;
-            document.getElementById('stress-indicator').style.left = 
-                `${Math.min(100, (data.conductance / 20) * 100)}%`;
+            if (!data) return;
             
-            // Update warna status
+            // Update main stress value
+            document.getElementById('current-stress').textContent = 
+                data.stressLevel.toFixed(1) + '%';
+            
+            // Update status text and color
+            const statusElem = document.getElementById('current-status');
+            statusElem.textContent = data.sclStatus;
+            
             const statusColors = {
                 'Relaxed': 'var(--stress-low)',
                 'Normal': 'var(--stress-medium)',
                 'Stressed': 'var(--stress-high)',
                 'High Stress': 'var(--stress-high)'
             };
-            document.getElementById('current-status').style.color = 
-                statusColors[data.sclStatus] || '#666';
+            statusElem.style.color = statusColors[data.sclStatus] || '#666';
+            
+            // Update stress indicator position
+            const indicator = document.getElementById('stress-indicator');
+            indicator.style.left = `${Math.min(100, (data.conductance / 20) * 100)}%`;
         }
 
         function updateHistoricalData(data) {
-            // Simpan ke localStorage dengan analisis tambahan
-            const history = JSON.parse(localStorage.getItem('gsrHistory') || [];
+            const history = safeParse(localStorage.getItem('gsrHistory'));
+            
             history.push({
                 timestamp: data.timestamp,
                 conductance: data.conductance,
                 stressLevel: data.stressLevel,
-                scrEvents: data.scrEvents
+                scrEvents: data.scrEvents,
+                sclStatus: data.sclStatus
             });
             
-            if(history.length > 24) history.shift();
-            localStorage.setItem('gsrHistory', JSON.stringify(history));
+            // Keep only the last 24 hours of data (288 readings at 5 min intervals)
+            const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+            const recentHistory = history.filter(item => item.timestamp >= twentyFourHoursAgo);
             
-            // Update tampilan historis
-            const avg = history.reduce((a,b) => a + b.stressLevel, 0) / history.length || 0;
-            const peak = Math.max(...history.map(h => h.conductance)) || 0;
+            localStorage.setItem('gsrHistory', JSON.stringify(recentHistory));
             
-            document.getElementById('avg-stress').textContent = avg.toFixed(1) + '%';
-            document.getElementById('peak-stress').textContent = peak.toFixed(2) + 'μS';
+            // Update historical stats
+            updateHistoricalStats(recentHistory);
         }
 
-        function populateModalContent() {
-            const history = JSON.parse(localStorage.getItem('gsrHistory') || []);
-            const analysis = {
-                avgSCL: calculateAverage(history, 'conductance'),
-                totalSCREvents: history.reduce((a,b) => a + b.scrEvents, 0),
-                stressDuration: history.filter(h => h.stressLevel > 50).length * 5 // 5 menit per data
-            };
+        function updateHistoricalStats(history) {
+            if (history.length === 0) return;
             
-            const content = `
-                <div class="analysis-item">
-                    <label>Average SCL</label>
-                    <div class="value">${analysis.avgSCL.toFixed(2)}μS</div>
-                </div>
-                <div class="analysis-item">
-                    <label>Total SCR Events</label>
-                    <div class="value">${analysis.totalSCREvents}</div>
-                </div>
-                <div class="analysis-item">
-                    <label>Stress Duration</label>
-                    <div class="value">${analysis.stressDuration} mins</div>
-                </div>
-            `;
+            const avgStress = history.reduce((sum, item) => sum + item.stressLevel, 0) / history.length;
+            const peakConductance = Math.max(...history.map(item => item.conductance));
             
-            document.querySelector('.analysis-grid').innerHTML = content;
-        }
-
-        function calculateAverage(data, key) {
-            return data.length > 0 ? data.reduce((a,b) => a + b[key], 0)/data.length : 0;
+            document.getElementById('avg-stress').textContent = avgStress.toFixed(1) + '%';
+            document.getElementById('peak-stress').textContent = peakConductance.toFixed(2) + 'μS';
         }
 
         function handleOfflineMode() {
-            const history = JSON.parse(localStorage.getItem('gsrHistory') || []);
-            if(history.length > 0) {
-                const lastData = history[history.length - 1];
-                updateUI(lastData);
-                document.getElementById('current-status').textContent = 'Offline Mode';
+            const history = safeParse(localStorage.getItem('gsrHistory'));
+            
+            if (history.length > 0) {
+                const lastItem = history[history.length - 1];
+                updateUI(lastItem);
+                
+                const statusElem = document.getElementById('current-status');
+                statusElem.textContent = 'Offline Mode';
+                statusElem.style.color = '#666';
             }
         }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', initChart);
-        modalOverlay.addEventListener('click', hideDetailModal);
     </script>
 </body>
 </html>
