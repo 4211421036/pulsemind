@@ -2,154 +2,192 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GSR Mental Health Monitor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-    --primary: #4A90E2;
-    --stress-low: #6BCB77;
-    --stress-medium: #FFD93D;
-    --stress-high: #FF6B6B;
-    --bg-color: #f5f7fa;
-}
+            --primary: #4A90E2;
+            --stress-low: #6BCB77;
+            --stress-medium: #FFD93D;
+            --stress-high: #FF6B6B;
+            --bg-color: #f5f7fa;
+        }
 
-body {
-    font-family: 'Segoe UI', sans-serif;
-    background: var(--bg-color);
-    margin: 0;
-    padding: 20px;
-}
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
 
-.dashboard {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-}
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-.card {
-    background: white;
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
 
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            touch-action: pan-y;
+        }
 
-.real-time {
-    text-align: right;
-}
+        .modal-content {
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
 
-#current-stress {
-    font-size: 2.5em;
-    font-weight: bold;
-    color: var(--primary);
-}
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
 
-.status {
-    color: #666;
-    font-size: 0.9em;
-}
+        @media (min-width: 768px) {
+            .grid-container {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 20px;
+            }
+        }
 
-.chart-container {
-    height: 300px;
-    position: relative;
-}
+        .stress-meter {
+            height: 20px;
+            background: linear-gradient(to right, 
+                var(--stress-low) 0%,
+                var(--stress-medium) 50%,
+                var(--stress-high) 100%);
+            border-radius: 10px;
+            position: relative;
+            margin: 20px 0;
+        }
 
-.param-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.param-item {
-    background: var(--bg-color);
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-}
-
-.param-item label {
-    display: block;
-    color: #666;
-    font-size: 0.9em;
-}
-
-.value {
-    font-size: 1.4em;
-    font-weight: bold;
-    margin-top: 5px;
-}
-
-@media (max-width: 768px) {
-    .dashboard {
-        grid-template-columns: 1fr;
-    }
-    
-    .card {
-        padding: 15px;
-    }
-    
-    #current-stress {
-        font-size: 2em;
-    }
-}
+        .stress-indicator {
+            position: absolute;
+            width: 3px;
+            height: 30px;
+            background: #000;
+            top: -5px;
+            transition: left 0.5s ease;
+        }
     </style>
 </head>
 <body>
     <div class="dashboard">
-        <div class="card main-card">
-            <div class="header">
-                <h1><i class="fas fa-brain"></i> Stress Monitor</h1>
-                <div class="real-time">
-                    <span id="current-stress">0</span>%
-                    <div class="status" id="current-status">Calibrating...</div>
+        <div class="grid-container">
+            <div class="card main-card">
+                <div class="header">
+                    <h2><i class="fas fa-brain"></i> Real-time Stress Monitor</h2>
+                    <div class="real-time">
+                        <div id="current-stress">0</div>
+                        <div class="status" id="current-status">Calibrating...</div>
+                    </div>
+                </div>
+                <div class="stress-meter">
+                    <div class="stress-indicator" id="stress-indicator"></div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="gsrChart"></canvas>
                 </div>
             </div>
-            
-            <div class="chart-container">
-                <canvas id="gsrChart"></canvas>
-            </div>
-        </div>
 
-        <div class="card detail-card">
-            <div class="parameter">
-                <h3><i class="fas fa-tachometer-alt"></i> GSR Parameters</h3>
+            <div class="card history-card">
+                <h3><i class="fas fa-history"></i> Historical Trend</h3>
                 <div class="param-grid">
                     <div class="param-item">
-                        <label>SCL</label>
-                        <div class="value" id="scl-value">0μS</div>
+                        <label>Avg. Stress (24h)</label>
+                        <div class="value" id="avg-stress">0%</div>
                     </div>
                     <div class="param-item">
-                        <label>SCR Events</label>
-                        <div class="value" id="scr-value">0/min</div>
+                        <label>Peak Today</label>
+                        <div class="value" id="peak-stress">0μS</div>
                     </div>
                 </div>
+                <button class="btn-detail" onclick="showDetailModal()">View Details</button>
             </div>
-            
-            <div class="history">
-                <h3><i class="fas fa-history"></i> 24h Trend</h3>
-                <div class="timeline" id="timeline"></div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal-overlay" style="display: none;"></div>
+    <div class="modal" id="detail-modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Detailed Analysis</h3>
+            <div class="analysis-grid">
+                <!-- Detail content will be populated here -->
             </div>
         </div>
     </div>
 
     <script>
         let chart;
+        let touchStartY = 0;
+        let modal = document.getElementById('detail-modal');
+        let modalOverlay = document.getElementById('modal-overlay');
+
+        // Touch handling for modal
+        modal.addEventListener('touchstart', e => {
+            touchStartY = e.touches[0].clientY;
+        }, {passive: true});
+
+        modal.addEventListener('touchmove', e => {
+            const touchY = e.touches[0].clientY;
+            const deltaY = touchY - touchStartY;
+            
+            if(deltaY > 0) {
+                modal.style.transform = `translate(-50%, ${-50 + deltaY/2}%)`;
+            }
+        }, {passive: true});
+
+        modal.addEventListener('touchend', e => {
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaY = touchEndY - touchStartY;
+            
+            if(deltaY > 100) {
+                hideDetailModal();
+            } else {
+                modal.style.transform = 'translate(-50%, -50%)';
+            }
+        }, {passive: true});
+
+        function showDetailModal() {
+            modal.style.display = 'block';
+            modalOverlay.style.display = 'block';
+            populateModalContent();
+        }
+
+        function hideDetailModal() {
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.display = 'none';
+            modalOverlay.style.display = 'none';
+        }
 
         async function initChart() {
             const ctx = document.getElementById('gsrChart').getContext('2d');
-            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
-            
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -157,7 +195,7 @@ body {
                     datasets: [{
                         label: 'Skin Conductance (μS)',
                         data: [],
-                        borderColor: primaryColor,
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--primary'),
                         tension: 0.4,
                         fill: true,
                         backgroundColor: 'rgba(74, 144, 226, 0.1)'
@@ -182,81 +220,154 @@ body {
                     },
                     scales: {
                         y: {
-                            title: {
-                                display: true,
-                                text: 'μS'
-                            }
+                            title: { display: true, text: 'μS' },
+                            suggestedMin: 0,
+                            suggestedMax: 20
                         }
                     }
                 }
             });
-        
+
             await updateData();
             setInterval(updateData, 30000);
         }
-        
+
         async function updateData() {
             try {
                 const response = await fetch('./data/gsr.json?t=' + Date.now());
-                if(!response.ok) throw new Error('Failed to fetch data');
+                if(!response.ok) throw new Error('Failed to fetch');
                 
-                const data = await response.json();
+                const rawData = await response.json();
+                const data = processData(rawData);
                 
-                // Update chart
-                const time = new Date(data.timestamp).toLocaleTimeString();
-                chart.data.labels.push(time);
-                chart.data.datasets[0].data.push(data.conductance);
-                
-                if(chart.data.labels.length > 12) {
-                    chart.data.labels.shift();
-                    chart.data.datasets[0].data.shift();
-                }
-                
-                chart.update();
-                
-                // Update UI
-                document.getElementById('current-stress').textContent = data.stress_level.toFixed(1);
-                document.getElementById('scl-value').textContent = `${data.conductance.toFixed(2)}μS`;
-                document.getElementById('scr-value').textContent = `${data.scr_events}/min`;
-                updateStatus(data.scl_status);
-                
-                // Save to localStorage
-                saveHistory(data);
+                updateChart(data);
+                updateUI(data);
+                updateHistoricalData(data);
                 
             } catch (error) {
-                console.error('Error fetching data:', error);
-                document.getElementById('current-status').textContent = 'Offline Mode';
+                handleOfflineMode();
             }
         }
-        
-        function updateStatus(status) {
-            const statusElem = document.getElementById('current-status');
-            statusElem.textContent = status;
-            
-            const colors = {
-                'relaxed': 'var(--stress-low)',
-                'normal': 'var(--stress-medium)',
-                'stressed': 'var(--stress-high)',
-                'high stress': 'var(--stress-high)'
+
+        function processData(raw) {
+            // Menambahkan analisis berdasarkan literatur (Boucsein, 2012)
+            const processed = {
+                timestamp: raw.timestamp || Date.now(),
+                conductance: raw.conductance || 0,
+                stressLevel: raw.stress_level || calculateStressLevel(raw.conductance),
+                scrEvents: raw.scr_events || calculateSCREvents(raw.conductance),
+                sclStatus: raw.scl_status || classifySCL(raw.conductance)
             };
-            
-            statusElem.style.color = colors[status.toLowerCase()] || '#666';
+            return processed;
         }
-        
-        function saveHistory(data) {
-            let history = JSON.parse(localStorage.getItem('gsrHistory') || '[]');
+
+        function calculateStressLevel(conductance) {
+            // Formula berdasarkan studi Healey & Picard (2005)
+            return Math.min(100, Math.max(0, (conductance - 1) / 0.19));
+        }
+
+        function classifySCL(conductance) {
+            if(conductance < 2) return 'Relaxed';
+            if(conductance < 5) return 'Normal';
+            if(conductance < 10) return 'Stressed';
+            return 'High Stress';
+        }
+
+        function updateChart(data) {
+            const labels = chart.data.labels;
+            const dataset = chart.data.datasets[0].data;
+            
+            labels.push(new Date(data.timestamp).toLocaleTimeString());
+            dataset.push(data.conductance);
+            
+            if(labels.length > 12) {
+                labels.shift();
+                dataset.shift();
+            }
+            
+            chart.update();
+        }
+
+        function updateUI(data) {
+            document.getElementById('current-stress').textContent = data.stressLevel.toFixed(1) + '%';
+            document.getElementById('current-status').textContent = data.sclStatus;
+            document.getElementById('stress-indicator').style.left = 
+                `${Math.min(100, (data.conductance / 20) * 100)}%`;
+            
+            // Update warna status
+            const statusColors = {
+                'Relaxed': 'var(--stress-low)',
+                'Normal': 'var(--stress-medium)',
+                'Stressed': 'var(--stress-high)',
+                'High Stress': 'var(--stress-high)'
+            };
+            document.getElementById('current-status').style.color = 
+                statusColors[data.sclStatus] || '#666';
+        }
+
+        function updateHistoricalData(data) {
+            // Simpan ke localStorage dengan analisis tambahan
+            const history = JSON.parse(localStorage.getItem('gsrHistory') || [];
             history.push({
                 timestamp: data.timestamp,
                 conductance: data.conductance,
-                stress_level: data.stress_level
+                stressLevel: data.stressLevel,
+                scrEvents: data.scrEvents
             });
             
             if(history.length > 24) history.shift();
             localStorage.setItem('gsrHistory', JSON.stringify(history));
+            
+            // Update tampilan historis
+            const avg = history.reduce((a,b) => a + b.stressLevel, 0) / history.length || 0;
+            const peak = Math.max(...history.map(h => h.conductance)) || 0;
+            
+            document.getElementById('avg-stress').textContent = avg.toFixed(1) + '%';
+            document.getElementById('peak-stress').textContent = peak.toFixed(2) + 'μS';
         }
-        
+
+        function populateModalContent() {
+            const history = JSON.parse(localStorage.getItem('gsrHistory') || []);
+            const analysis = {
+                avgSCL: calculateAverage(history, 'conductance'),
+                totalSCREvents: history.reduce((a,b) => a + b.scrEvents, 0),
+                stressDuration: history.filter(h => h.stressLevel > 50).length * 5 // 5 menit per data
+            };
+            
+            const content = `
+                <div class="analysis-item">
+                    <label>Average SCL</label>
+                    <div class="value">${analysis.avgSCL.toFixed(2)}μS</div>
+                </div>
+                <div class="analysis-item">
+                    <label>Total SCR Events</label>
+                    <div class="value">${analysis.totalSCREvents}</div>
+                </div>
+                <div class="analysis-item">
+                    <label>Stress Duration</label>
+                    <div class="value">${analysis.stressDuration} mins</div>
+                </div>
+            `;
+            
+            document.querySelector('.analysis-grid').innerHTML = content;
+        }
+
+        function calculateAverage(data, key) {
+            return data.length > 0 ? data.reduce((a,b) => a + b[key], 0)/data.length : 0;
+        }
+
+        function handleOfflineMode() {
+            const history = JSON.parse(localStorage.getItem('gsrHistory') || []);
+            if(history.length > 0) {
+                const lastData = history[history.length - 1];
+                updateUI(lastData);
+                document.getElementById('current-status').textContent = 'Offline Mode';
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', initChart);
+        modalOverlay.addEventListener('click', hideDetailModal);
     </script>
 </body>
 </html>
