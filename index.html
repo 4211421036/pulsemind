@@ -2,66 +2,248 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GSR Mental Health Monitor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .card { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-        .chart-container { position: relative; height: 400px; }
+        :root {
+    --primary: #4A90E2;
+    --stress-low: #6BCB77;
+    --stress-medium: #FFD93D;
+    --stress-high: #FF6B6B;
+    --bg-color: #f5f7fa;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg-color);
+    margin: 0;
+    padding: 20px;
+}
+
+.dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.real-time {
+    text-align: right;
+}
+
+#current-stress {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.status {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.chart-container {
+    height: 300px;
+    position: relative;
+}
+
+.param-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.param-item {
+    background: var(--bg-color);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.param-item label {
+    display: block;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.value {
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+    
+    .card {
+        padding: 15px;
+    }
+    
+    #current-stress {
+        font-size: 2em;
+    }
+}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h2>Real-time GSR Monitoring</h2>
+    <div class="dashboard">
+        <div class="card main-card">
+            <div class="header">
+                <h1><i class="fas fa-brain"></i> Stress Monitor</h1>
+                <div class="real-time">
+                    <span id="current-stress">0</span>%
+                    <div class="status" id="current-status">Calibrating...</div>
+                </div>
+            </div>
+            
             <div class="chart-container">
                 <canvas id="gsrChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card detail-card">
+            <div class="parameter">
+                <h3><i class="fas fa-tachometer-alt"></i> GSR Parameters</h3>
+                <div class="param-grid">
+                    <div class="param-item">
+                        <label>SCL</label>
+                        <div class="value" id="scl-value">0μS</div>
+                    </div>
+                    <div class="param-item">
+                        <label>SCR Events</label>
+                        <div class="value" id="scr-value">0/min</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="history">
+                <h3><i class="fas fa-history"></i> 24h Trend</h3>
+                <div class="timeline" id="timeline"></div>
             </div>
         </div>
     </div>
 
     <script>
-        let ctx = document.getElementById('gsrChart').getContext('2d');
-        let chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Skin Conductance (μS)',
-                    data: [],
-                    borderColor: '#4e73df',
-                    tension: 0.1
-                }]
+        let chart;
+
+async function initChart() {
+    const ctx = document.getElementById('gsrChart').getContext('2d');
+    
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Skin Conductance (μS)',
+                data: [],
+                borderColor: var(--primary),
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(74, 144, 226, 0.1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                annotation: {
+                    annotations: {
+                        stressThreshold: {
+                            type: 'line',
+                            yMin: 5,
+                            yMax: 5,
+                            borderColor: '#FF6B6B',
+                            borderWidth: 2,
+                            borderDash: [5,5]
+                        }
+                    }
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'μS' }
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'μS'
                     }
                 }
             }
-        });
-
-        async function fetchData() {
-            try {
-                const response = await fetch('https://username.github.io/repo/data/gsr.json');
-                const data = await response.json();
-                
-                // Update chart
-                chart.data.labels.push(new Date().toLocaleTimeString());
-                chart.data.datasets[0].data.push(data.conductance);
-                chart.update();
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
         }
+    });
 
-        setInterval(fetchData, 30000);
-        fetchData();
+    updateData();
+    setInterval(updateData, 30000);
+}
+
+async function updateData() {
+    try {
+        const response = await fetch('./data/gsr_data.json?t=' + Date.now());
+        const data = await response.json();
+        
+        // Update chart
+        const time = new Date(data.timestamp).toLocaleTimeString();
+        chart.data.labels.push(time);
+        chart.data.datasets[0].data.push(data.conductance);
+        chart.update();
+        
+        // Update UI
+        document.getElementById('current-stress').textContent = data.stress_level;
+        document.getElementById('scl-value').textContent = `${data.conductance}μS`;
+        document.getElementById('scr-value').textContent = `${data.scr_events}/min`;
+        updateStatus(data.scl_status);
+        
+        // Save to localStorage
+        saveHistory(data);
+        
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+}
+
+function updateStatus(status) {
+    const statusElem = document.getElementById('current-status');
+    statusElem.textContent = status;
+    
+    switch(status.toLowerCase()) {
+        case 'relaxed':
+            statusElem.style.color = var(--stress-low);
+            break;
+        case 'normal':
+            statusElem.style.color = var(--stress-medium);
+            break;
+        default:
+            statusElem.style.color = var(--stress-high);
+    }
+}
+
+function saveHistory(data) {
+    let history = JSON.parse(localStorage.getItem('gsrHistory') || '[]');
+    history.push(data);
+    if(history.length > 24) history.shift();
+    localStorage.setItem('gsrHistory', JSON.stringify(history));
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', initChart);
     </script>
 </body>
 </html>
