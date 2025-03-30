@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GSR Mental Health Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .chart-container { position: relative; height: 400px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>Real-time GSR Monitoring</h2>
+            <div class="chart-container">
+                <canvas id="gsrChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ctx = document.getElementById('gsrChart').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Skin Conductance (μS)',
+                    data: [],
+                    borderColor: '#4e73df',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'μS' }
+                    }
+                }
+            }
+        });
+
+        async function fetchData() {
+            try {
+                const response = await fetch('https://username.github.io/repo/data/gsr.json');
+                const data = await response.json();
+                
+                // Update chart
+                chart.data.labels.push(new Date().toLocaleTimeString());
+                chart.data.datasets[0].data.push(data.conductance);
+                chart.update();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        setInterval(fetchData, 30000);
+        fetchData();
+    </script>
+</body>
+</html>
