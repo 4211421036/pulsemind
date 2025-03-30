@@ -147,6 +147,7 @@ body {
         let chart;
         async function initChart() {
             const ctx = document.getElementById('gsrChart').getContext('2d');
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
             
             chart = new Chart(ctx, {
                 type: 'line',
@@ -155,7 +156,7 @@ body {
                     datasets: [{
                         label: 'Skin Conductance (μS)',
                         data: [],
-                        borderColor: var(--primary),
+                        borderColor: primaryColor, // Diperbaiki di sini
                         tension: 0.4,
                         fill: true,
                         backgroundColor: 'rgba(74, 144, 226, 0.1)'
@@ -193,44 +194,19 @@ body {
             setInterval(updateData, 30000);
         }
         
-        async function updateData() {
-            try {
-                const response = await fetch('./data/gsr.json?t=' + Date.now());
-                const data = await response.json();
-                
-                // Update chart
-                const time = new Date(data.timestamp).toLocaleTimeString();
-                chart.data.labels.push(time);
-                chart.data.datasets[0].data.push(data.conductance);
-                chart.update();
-                
-                // Update UI
-                document.getElementById('current-stress').textContent = data.stress_level;
-                document.getElementById('scl-value').textContent = `${data.conductance}μS`;
-                document.getElementById('scr-value').textContent = `${data.scr_events}/min`;
-                updateStatus(data.scl_status);
-                
-                // Save to localStorage
-                saveHistory(data);
-                
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        }
-        
         function updateStatus(status) {
             const statusElem = document.getElementById('current-status');
             statusElem.textContent = status;
             
             switch(status.toLowerCase()) {
                 case 'relaxed':
-                    statusElem.style.color = var(--stress-low);
+                    statusElem.style.color = 'var(--stress-low)'; // Diperbaiki di sini
                     break;
                 case 'normal':
-                    statusElem.style.color = var(--stress-medium);
+                    statusElem.style.color = 'var(--stress-medium)'; // Diperbaiki di sini
                     break;
                 default:
-                    statusElem.style.color = var(--stress-high);
+                    statusElem.style.color = 'var(--stress-high)'; // Diperbaiki di sini
             }
         }
         
