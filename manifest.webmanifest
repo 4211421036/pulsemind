@@ -27,28 +27,28 @@
   ],
   "screenshots": [
     {
-      "src": "/img/181849.png",
+      "src": "https://4211421036.github.io/pulsemind//img/181849.png",
       "sizes": "1208x769",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Fig 1: Real-time SCL/SCR Visualization (36% Normal Range)"
     },
     {
-      "src": "/img/181904.png",
+      "src": "https://4211421036.github.io/pulsemind//img/181904.png",
       "sizes": "588x415",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Fig 2: Quantitative EDA Metrics (2.6 μS Baseline)"
     },
     {
-      "src": "/img/181913.png",
+      "src": "https://4211421036.github.io/pulsemind//img/181913.png",
       "sizes": "588x204",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Fig 3: Evidence-Based Stress Interventions"
     },
     {
-      "src": "/img/181928.png",
+      "src": "https://4211421036.github.io/pulsemind//img/181928.png",
       "sizes": "734x299",
       "type": "image/png",
       "form_factor": "narrow",
