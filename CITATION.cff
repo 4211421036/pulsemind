@@ -2,7 +2,7 @@
 cff-version: 1.2.0
 message: "Please cite this software using these metadata."
 title: "PulseMind: Electrodermal Activity (EDA) Monitoring System"
-version: "2.1.0"
+version: "1.0.0"
 date-released: "2025-04-01"
 abstract: "An open-source psychophysiological monitoring system that measures galvanic skin response (GSR) for stress detection, combining ESP32-based hardware with web visualization."
 authors:
