@@ -1,0 +1,35 @@
+# PulseMind GSR Monitoring - Robots Exclusion Protocol
+User-agent: *
+Allow: /$
+Allow: /index.html
+Disallow: /data/
+
+# Crawl-delay for API-heavy sections
+Crawl-delay: 5
+
+# Sitemap location
+Sitemap: https://4211421036.github.io/pulsemind/sitemap.xml
+
+# Special directives for search engines
+User-agent: Googlebot
+Allow: /index.html
+Disallow: /data/
+
+User-agent: Bingbot
+Allow: /index.html
+Disallow: /experimental/
+
+User-agent: Yandex
+Disallow: /
+
+# Allow media indexing
+User-agent: Googlebot-Image
+Allow: /img/
+
+# Block AI crawlers
+User-agent: ChatGPT-User
+Disallow: /
+User-agent: GPTBot
+Disallow: /
+User-agent: Anthropic-ai
+Disallow: /
