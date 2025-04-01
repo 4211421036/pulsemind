@@ -35,21 +35,21 @@
     },
     {
       "src": "/img/181904.png",
-      "sizes": "1080x1920",
+      "sizes": "588x415",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Fig 2: Quantitative EDA Metrics (2.6 μS Baseline)"
     },
     {
       "src": "/img/181913.png",
-      "sizes": "1080x1920",
+      "sizes": "588x204",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Fig 3: Evidence-Based Stress Interventions"
     },
     {
       "src": "/img/181928.png",
-      "sizes": "1080x1920",
+      "sizes": "734x299",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Fig 4: Weekly Stress Profile (68% Peak on Tuesday)"
