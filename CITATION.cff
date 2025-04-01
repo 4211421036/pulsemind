@@ -1,0 +1,44 @@
+# CITATION.cff
+cff-version: 1.2.0
+message: "Please cite this software using these metadata."
+title: "PulseMind: Electrodermal Activity (EDA) Monitoring System"
+version: "2.1.0"
+date-released: "2025-04-01"
+abstract: "An open-source psychophysiological monitoring system that measures galvanic skin response (GSR) for stress detection, combining ESP32-based hardware with web visualization."
+authors:
+  - given-names: "Hanifa Septi"
+    family-names: "Larasati"
+    email: "hanifaseptilarasati@example.com"
+    affiliation: "Independent Researcher"
+    orcid: "https://orcid.org/0000-0000-0000-0000" # Replace with your ORCID if available
+repository-code: "https://github.com/4211421036/pulsemind"
+url: "https://4211421036.github.io/pulsemind"
+keywords:
+  - "electrodermal activity"
+  - "galvanic skin response"
+  - "psychophysiology"
+  - "stress detection"
+  - "ESP32"
+  - "biomedical monitoring"
+license: "MIT"
+type: "software"
+
+# Scientific context
+references:
+  - type: "book"
+    title: "Electrodermal Activity"
+    author:
+      - family-names: "Boucsein"
+        given-names: "Wolfram"
+    year: "2012"
+    publisher: "Springer Science & Business Media"
+  
+  - type: "article"
+    title: "The electrodermal system"
+    author:
+      - family-names: "Dawson"
+        given-names: "Michael E."
+    year: "2011"
+    journal: "Handbook of psychophysiology"
+    volume: "2"
+    pages: "157-181"
