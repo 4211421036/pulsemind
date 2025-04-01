@@ -975,7 +975,7 @@
                 return 50 + ((conductance - GSR_THRESHOLDS.NORMAL) / (GSR_THRESHOLDS.STRESSED - GSR_THRESHOLDS.NORMAL)) * 25;
             } else {
                 return 75 + (Math.min(conductance - GSR_THRESHOLDS.STRESSED, GSR_THRESHOLDS.HIGH_STRESS - GSR_THRESHOLDS.STRESSED) / 
-                    (GSR_THRESHOLDS.HIGH_STRESS - GSR_THRESHOLDS.STRESSED) * 25;
+                    (GSR_THRESHOLDS.HIGH_STRESS - GSR_THRESHOLDS.STRESSED)) * 25;
             }
         }
 
