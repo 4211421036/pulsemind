@@ -70,7 +70,6 @@
     </script>
     
     <!-- Browser Features -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data:;">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <style>
         :root {
@@ -1371,6 +1370,19 @@ function loadSampleData() {
     historicalData = [sampleData];
     lastData = sampleData;
     updateUI(sampleData);
+}
+    </script>
+    <script>
+        // Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('https://4211421036.github.io/pulsemind/sw.js')
+      .then(registration => {
+        console.log('SW registered: ', registration.scope);
+      }).catch(err => {
+        console.log('SW registration failed: ', err);
+      });
+  });
 }
     </script>
 </body>
