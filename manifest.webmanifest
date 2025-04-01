@@ -28,7 +28,7 @@
   "screenshots": [
     {
       "src": "/img/181849.png",
-      "sizes": "1080x1920",
+      "sizes": "1208x769",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Fig 1: Real-time SCL/SCR Visualization (36% Normal Range)"
