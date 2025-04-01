@@ -27,18 +27,32 @@
   ],
   "screenshots": [
     {
-      "src": "/pulsemind/assets/screenshots/dashboard-1.png",
+      "src": "/img/181849.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GSR Dashboard View"
+      "label": "Fig 1: Real-time SCL/SCR Visualization (36% Normal Range)"
     },
     {
-      "src": "/pulsemind/assets/screenshots/analytics-1.png",
-      "sizes": "1920x1080",
+      "src": "/img/181904.png",
+      "sizes": "1080x1920",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "Stress Analytics"
+      "form_factor": "narrow",
+      "label": "Fig 2: Quantitative EDA Metrics (2.6 μS Baseline)"
+    },
+    {
+      "src": "/img/181913.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Fig 3: Evidence-Based Stress Interventions"
+    },
+    {
+      "src": "/img/181928.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Fig 4: Weekly Stress Profile (68% Peak on Tuesday)"
     }
   ],
   "features": [
@@ -50,26 +64,6 @@
     "health",
     "medical",
     "productivity"
-  ],
-  "shortcuts": [
-    {
-      "name": "New Measurement",
-      "short_name": "Measure",
-      "description": "Start new GSR recording session",
-      "url": "/pulsemind/new-session",
-      "icons": [
-        {
-          "src": "/pulsemind/assets/icons/measure-icon.png",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "View Trends",
-      "short_name": "Trends",
-      "description": "Analyze historical stress patterns",
-      "url": "/pulsemind/trends"
-    }
   ],
   "protocol_handlers": [
     {
