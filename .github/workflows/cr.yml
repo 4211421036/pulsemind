@@ -16,7 +16,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Validate Arduino Code
-      if: contains(github.event.pull_request.changed_files, 'firmware/')
+      if: contains(github.event.pull_request.changed_files, 'arduino/')
       run: |
         # Check for required headers
         grep -q '#include <WiFi.h>' firmware/pulsemind.ino || \
@@ -29,10 +29,10 @@ jobs:
         echo "Arduino code validation passed"
 
     - name: Validate HTML Structure
-      if: contains(github.event.pull_request.changed_files, 'web-dashboard/')
+      if: contains(github.event.pull_request.changed_files)
       run: |
         # Check for required meta tags
-        grep -q '<meta charset="UTF-8">' web-dashboard/index.html || \
+        grep -q '<meta charset="UTF-8">' index.html || \
           (echo "Missing charset meta tag" && exit 1)
         
         # Check for Chart.js inclusion
