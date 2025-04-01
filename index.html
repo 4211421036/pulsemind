@@ -3,29 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GSR Mental Health Monitor</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>PulseMind</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         :root {
             --primary: #4A90E2;
-            --stress-low: #6BCB77;
-            --stress-medium: #FFD93D;
-            --stress-high: #FF6B6B;
-            --bg-color: #f5f7fa;
-            --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --relaxed: #6BCB77;
+            --normal: #FFD93D;
+            --stressed: #FF9671;
+            --high-stress: #FF6B6B;
+            --bg-color: #15193B;
+            --card-bg: #1E2746;
+            --text-color: #E9ECEF;
+            --text-secondary: #ADB5BD;
+            --card-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            --border-radius: 16px;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
-            color: #333;
+            color: var(--text-color);
             line-height: 1.6;
             overflow-x: hidden;
         }
@@ -36,17 +41,40 @@
             padding: 20px;
         }
 
+        .nav-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: rgba(30, 39, 70, 0.5);
+            border-radius: 50px;
+            padding: 5px;
+            width: fit-content;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab.active {
+            background: #FFC107;
+            color: #1E1E1E;
+        }
+
         .card {
-            background: white;
-            border-radius: 15px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: var(--card-shadow);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
         }
 
         .header {
@@ -57,7 +85,8 @@
         }
 
         h1, h2, h3 {
-            color: #2c3e50;
+            color: var(--text-color);
+            font-weight: 600;
         }
 
         .real-time {
@@ -67,12 +96,18 @@
         #current-stress {
             font-size: 2.5rem;
             font-weight: bold;
-            color: var(--primary);
+            background: linear-gradient(135deg, #6BCB77 0%, #FFD93D 50%, #FF6B6B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .status {
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-block;
         }
 
         .chart-container {
@@ -82,42 +117,55 @@
         }
 
         .stress-meter {
-            height: 20px;
+            height: 10px;
             background: linear-gradient(to right, 
-                var(--stress-low) 0%,
-                var(--stress-medium) 50%,
-                var(--stress-high) 100%);
+                var(--relaxed) 0%,
+                var(--normal) 35%,
+                var(--stressed) 60%,
+                var(--high-stress) 100%);
             border-radius: 10px;
             position: relative;
-            margin: 20px 0;
+            margin: 30px 0 10px;
         }
 
         .stress-indicator {
             position: absolute;
-            width: 3px;
-            height: 30px;
-            background: #2c3e50;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
             top: -5px;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            border: 3px solid var(--card-bg);
             transition: left 0.5s ease;
         }
 
-        .param-grid {
+        .stress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .metric-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
-        .param-item {
-            background: var(--bg-color);
+        .metric-item {
+            background: rgba(255,255,255,0.05);
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: center;
         }
 
-        .param-item label {
+        .metric-item label {
             display: block;
-            color: #666;
+            color: var(--text-secondary);
             font-size: 0.9rem;
             margin-bottom: 5px;
         }
@@ -127,7 +175,71 @@
             font-weight: bold;
         }
 
-        .btn-detail {
+        .trend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .trend i {
+            margin-right: 5px;
+        }
+
+        .trend-up {
+            color: var(--high-stress);
+        }
+
+        .trend-down {
+            color: var(--relaxed);
+        }
+
+        .trend-stable {
+            color: var(--normal);
+        }
+
+        .weekly-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .weekly-day {
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .weekly-day .day {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .weekly-day .stress-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 auto 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .weekly-day .stress-level {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .weekly-day .stress-range {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-action {
             display: block;
             width: 100%;
             padding: 12px;
@@ -135,15 +247,64 @@
             background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.3s;
         }
 
-        .btn-detail:hover {
+        .btn-action:hover {
             background-color: #3a7bc8;
+        }
+
+        /* Hourly forecast style */
+        .hourly-forecast {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+            margin: 15px 0;
+        }
+
+        .hourly-forecast::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .hourly-forecast::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 10px;
+        }
+
+        .forecast-hour {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+            padding: 10px;
+        }
+
+        .forecast-time {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .forecast-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .forecast-value {
+            font-weight: 600;
+            font-size: 1.1rem;
         }
 
         /* Modal Styles */
@@ -153,7 +314,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.7);
             backdrop-filter: blur(5px);
             z-index: 100;
             display: none;
@@ -167,18 +328,17 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 90%;
-            max-width: 400px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
             z-index: 101;
             display: none;
             overflow: hidden;
-            touch-action: pan-y;
         }
 
         .modal-content {
-            padding: 20px;
+            padding: 25px;
             max-height: 80vh;
             overflow-y: auto;
         }
@@ -187,9 +347,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         .close-modal {
@@ -197,7 +357,7 @@
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
-            color: #666;
+            color: var(--text-color);
         }
 
         .analysis-grid {
@@ -207,14 +367,79 @@
         }
 
         .analysis-item {
-            background: var(--bg-color);
+            background: rgba(255,255,255,0.05);
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 12px;
+        }
+
+        .analysis-item label {
+            display: block;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .analysis-item label i {
+            margin-right: 8px;
+        }
+
+        .analysis-item small {
+            display: block;
+            margin-top: 5px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        /* Recommendation styles */
+        .recommendations {
+            margin-top: 20px;
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .recommendation-content h4 {
+            margin-bottom: 5px;
+        }
+
+        .recommendation-content p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
 
         /* Responsive Design */
         @media (min-width: 768px) {
-            .grid-container {
+            .dashboard-grid {
                 display: grid;
                 grid-template-columns: 2fr 1fr;
                 gap: 20px;
@@ -222,10 +447,26 @@
             
             .card {
                 padding: 25px;
+                margin-bottom: 20px;
+            }
+
+            .analysis-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .weekly-grid {
+                grid-template-columns: repeat(7, 80px);
             }
         }
 
         @media (max-width: 480px) {
+            .nav-tab {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+            
             #current-stress {
                 font-size: 2rem;
             }
@@ -233,41 +474,102 @@
             .value {
                 font-size: 1.2rem;
             }
+
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="dashboard">
-        <div class="grid-container">
-            <div class="card main-card">
-                <div class="header">
-                    <h2><i class="fas fa-brain"></i> Real-time Stress Monitor</h2>
-                    <div class="real-time">
-                        <div id="current-stress">0</div>
-                        <div class="status" id="current-status">Calibrating...</div>
+        <div class="nav-tabs">
+            <div class="nav-tab active">Overview</div>
+            <div class="nav-tab">Trends</div>
+            <div class="nav-tab">Insights</div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="main-column">
+                <div class="card main-card">
+                    <div class="header">
+                        <h2><i class="fas fa-brain"></i> Real-time Mental State</h2>
+                        <div class="real-time">
+                            <div id="current-stress">0%</div>
+                            <div class="status" id="current-status">Calibrating...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stress-meter">
+                        <div class="stress-indicator" id="stress-indicator"></div>
+                    </div>
+                    <div class="stress-labels">
+                        <span>Relaxed</span>
+                        <span>Normal</span>
+                        <span>Stressed</span>
+                        <span>High Stress</span>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="gsrChart"></canvas>
+                    </div>
+
+                    <h3><i class="fas fa-clock"></i> Today's Forecast</h3>
+                    <div class="hourly-forecast" id="hourly-forecast">
+                        <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
-                <div class="stress-meter">
-                    <div class="stress-indicator" id="stress-indicator"></div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="gsrChart"></canvas>
+
+                <div class="card recommendations-card">
+                    <h3><i class="fas fa-lightbulb"></i> Recommendations</h3>
+                    <div class="recommendations" id="recommendations">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
                 </div>
             </div>
 
-            <div class="card history-card">
-                <h3><i class="fas fa-history"></i> Historical Trend</h3>
-                <div class="param-grid">
-                    <div class="param-item">
-                        <label>Avg. Stress (24h)</label>
-                        <div class="value" id="avg-stress">0%</div>
+            <div class="side-column">
+                <div class="card metrics-card">
+                    <h3><i class="fas fa-chart-line"></i> Key Metrics</h3>
+                    <div class="metric-grid">
+                        <div class="metric-item">
+                            <label>Avg. Stress (24h)</label>
+                            <div class="value" id="avg-stress">0%</div>
+                            <div class="trend" id="avg-trend">
+                                <i class="fas fa-minus"></i> Stable
+                            </div>
+                        </div>
+                        <div class="metric-item">
+                            <label>Peak Today</label>
+                            <div class="value" id="peak-stress">0μS</div>
+                            <div class="trend" id="peak-trend">
+                                <i class="fas fa-minus"></i> Stable
+                            </div>
+                        </div>
+                        <div class="metric-item">
+                            <label>Stress Duration</label>
+                            <div class="value" id="stress-duration">0 min</div>
+                            <div class="trend" id="duration-trend">
+                                <i class="fas fa-minus"></i> Stable
+                            </div>
+                        </div>
+                        <div class="metric-item">
+                            <label>Recovery Rate</label>
+                            <div class="value" id="recovery-rate">0%</div>
+                            <div class="trend" id="recovery-trend">
+                                <i class="fas fa-minus"></i> Stable
+                            </div>
+                        </div>
                     </div>
-                    <div class="param-item">
-                        <label>Peak Today</label>
-                        <div class="value" id="peak-stress">0μS</div>
+                    <button class="btn-action" id="detail-btn">View Full Analysis</button>
+                </div>
+
+                <div class="card weekly-card">
+                    <h3><i class="fas fa-calendar-week"></i> Weekly Overview</h3>
+                    <div class="weekly-grid" id="weekly-grid">
+                        <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
-                <button class="btn-detail" id="detail-btn">View Details</button>
             </div>
         </div>
     </div>
@@ -277,11 +579,11 @@
     <div class="modal" id="detail-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Detailed Analysis</h3>
+                <h3><i class="fas fa-chart-bar"></i> Mental Health Analysis</h3>
                 <button class="close-modal" id="close-modal">&times;</button>
             </div>
             <div class="analysis-grid" id="analysis-grid">
-                <!-- Content will be populated by JavaScript -->
+                <!-- Will be populated by JavaScript -->
             </div>
         </div>
     </div>
@@ -293,23 +595,35 @@
         const closeModalBtn = document.getElementById('close-modal');
         const detailBtn = document.getElementById('detail-btn');
         const analysisGrid = document.getElementById('analysis-grid');
+        const hourlyForecast = document.getElementById('hourly-forecast');
+        const weeklyGrid = document.getElementById('weekly-grid');
+        const recommendationsContainer = document.getElementById('recommendations');
         
         // Chart and Data Variables
         let chart;
-        let touchStartY = 0;
-        let isDraggingModal = false;
         let lastData = null;
+        let historicalData = [];
+        
+        // GSR thresholds based on research (Boucsein, 2012)
+        const GSR_THRESHOLDS = {
+            RELAXED: 2.0,
+            NORMAL: 5.0,
+            STRESSED: 10.0,
+            HIGH_STRESS: 20.0
+        };
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
             initChart();
             setupEventListeners();
             loadInitialData();
+            generateWeeklyData();
+            generateHourlyForecast();
+            generateRecommendations();
         });
 
         function initChart() {
             const ctx = document.getElementById('gsrChart').getContext('2d');
-            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
             
             chart = new Chart(ctx, {
                 type: 'line',
@@ -318,12 +632,12 @@
                     datasets: [{
                         label: 'Skin Conductance (μS)',
                         data: [],
-                        borderColor: primaryColor,
+                        borderColor: '#4A90E2',
                         borderWidth: 2,
                         tension: 0.4,
                         fill: true,
                         backgroundColor: 'rgba(74, 144, 226, 0.1)',
-                        pointBackgroundColor: primaryColor,
+                        pointBackgroundColor: '#4A90E2',
                         pointRadius: 4,
                         pointHoverRadius: 6
                     }]
@@ -337,22 +651,20 @@
                         },
                         tooltip: {
                             mode: 'index',
-                            intersect: false
-                        },
-                        annotation: {
-                            annotations: {
-                                stressThreshold: {
-                                    type: 'line',
-                                    yMin: 5,
-                                    yMax: 5,
-                                    borderColor: '#FF6B6B',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    label: {
-                                        content: 'Stress Threshold',
-                                        enabled: true,
-                                        position: 'left'
-                                    }
+                            intersect: false,
+                            backgroundColor: 'rgba(30, 39, 70, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Conductance: ${context.raw.toFixed(2)} μS`;
+                                },
+                                afterLabel: function(context) {
+                                    return `Stress Level: ${calculateStressLevel(context.raw).toFixed(1)}%`;
                                 }
                             }
                         }
@@ -360,17 +672,41 @@
                     scales: {
                         y: {
                             beginAtZero: true,
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            border: {
+                                display: false
+                            },
                             title: {
                                 display: true,
                                 text: 'μS',
+                                color: 'rgba(255, 255, 255, 0.7)',
                                 font: {
+                                    size: 12,
                                     weight: 'bold'
                                 }
                             },
-                            suggestedMax: 20
+                            suggestedMax: 15
                         },
                         x: {
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    size: 10
+                                },
+                                maxRotation: 0
+                            },
                             grid: {
+                                display: false
+                            },
+                            border: {
                                 display: false
                             }
                         }
@@ -379,6 +715,15 @@
                         mode: 'nearest',
                         axis: 'x',
                         intersect: false
+                    },
+                    elements: {
+                        line: {
+                            borderWidth: 2
+                        },
+                        point: {
+                            radius: 0,
+                            hoverRadius: 6
+                        }
                     }
                 }
             });
@@ -390,10 +735,13 @@
             closeModalBtn.addEventListener('click', hideDetailModal);
             modalOverlay.addEventListener('click', hideDetailModal);
             
-            // Touch events for swipe to close
-            modal.addEventListener('touchstart', handleTouchStart, { passive: true });
-            modal.addEventListener('touchmove', handleTouchMove, { passive: true });
-            modal.addEventListener('touchend', handleTouchEnd, { passive: true });
+            // Nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                });
+            });
             
             // Keyboard accessibility
             document.addEventListener('keydown', (e) => {
@@ -401,46 +749,6 @@
                     hideDetailModal();
                 }
             });
-        }
-
-        function handleTouchStart(e) {
-            touchStartY = e.touches[0].clientY;
-            isDraggingModal = true;
-            modal.style.transition = 'none';
-        }
-
-        function handleTouchMove(e) {
-            if (!isDraggingModal) return;
-            
-            const touchY = e.touches[0].clientY;
-            const deltaY = touchY - touchStartY;
-            
-            if (deltaY > 0) {
-                const translateY = Math.min(deltaY, 150);
-                modal.style.transform = `translate(-50%, calc(-50% + ${translateY}px)`;
-                modal.style.opacity = 1 - (translateY / 300);
-            }
-        }
-
-        function handleTouchEnd(e) {
-            if (!isDraggingModal) return;
-            
-            const touchEndY = e.changedTouches[0].clientY;
-            const deltaY = touchEndY - touchStartY;
-            
-            if (deltaY > 100) {
-                hideDetailModal();
-            } else {
-                resetModalPosition();
-            }
-            
-            isDraggingModal = false;
-        }
-
-        function resetModalPosition() {
-            modal.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.opacity = 1;
         }
 
         function showDetailModal() {
@@ -452,254 +760,144 @@
             
             modalOverlay.style.opacity = '1';
             populateModalContent();
-            
-            // Lock body scroll when modal is open
-            document.body.style.overflow = 'hidden';
         }
 
         function hideDetailModal() {
             modalOverlay.style.opacity = '0';
-            modal.style.transform = 'translate(-50%, -50%) scale(0.95)';
-            modal.style.opacity = '0';
             
             setTimeout(() => {
                 modalOverlay.style.display = 'none';
                 modal.style.display = 'none';
-                resetModalPosition();
-                document.body.style.overflow = '';
             }, 300);
         }
 
         function populateModalContent() {
-            const history = safeParse(localStorage.getItem('gsrHistory'));
-            
-            if (history.length === 0) {
+            if (historicalData.length === 0) {
                 analysisGrid.innerHTML = '<p>No historical data available</p>';
                 return;
             }
             
-            const stats = calculateStatistics(history);
+            const stats = calculateStatistics(historicalData);
             
             const content = `
                 <div class="analysis-item">
-                    <label><i class="fas fa-chart-line"></i> Average SCL</label>
+                    <label><i class="fas fa-wave-square"></i> Average SCL</label>
                     <div class="value">${stats.avgSCL.toFixed(2)} μS</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / GSR_THRESHOLDS.HIGH_STRESS) * 100)}%; 
+                            background: ${getColorForConductance(stats.avgSCL)};"></div>
+                    </div>
                     <small>Normal range: 1-5 μS</small>
                 </div>
                 <div class="analysis-item">
                     <label><i class="fas fa-bolt"></i> Total SCR Events</label>
                     <div class="value">${stats.totalSCREvents}</div>
-                    <small>Normal: &lt;3/min</small>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${Math.min(100, (stats.totalSCREvents / 50) * 100)}%; 
+                            background: ${getColorForEvents(stats.totalSCREvents)};"></div>
+                    </div>
+                    <small>Normal: &lt;3 per minute</small>
                 </div>
                 <div class="analysis-item">
                     <label><i class="fas fa-clock"></i> Stress Duration</label>
                     <div class="value">${stats.stressDuration} mins</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${Math.min(100, (stats.stressDuration / 180) * 100)}%; 
+                            background: ${getColorForDuration(stats.stressDuration)};"></div>
+                    </div>
                     <small>Today</small>
                 </div>
                 <div class="analysis-item">
                     <label><i class="fas fa-chart-pie"></i> Stress Distribution</label>
                     <div class="value">${stats.stressPercentage}% of time</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${stats.stressPercentage}%; 
+                            background: ${getColorForPercentage(stats.stressPercentage)};"></div>
+                    </div>
                     <small>Above threshold</small>
+                </div>
+                <div class="analysis-item">
+                    <label><i class="fas fa-heartbeat"></i> Stress Variability</label>
+                    <div class="value">${stats.stressVariability.toFixed(2)}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${Math.min(100, (stats.stressVariability / 5) * 100)}%; 
+                            background: ${getColorForVariability(stats.stressVariability)};"></div>
+                    </div>
+                    <small>Lower is better</small>
+                </div>
+                <div class="analysis-item">
+                    <label><i class="fas fa-undo"></i> Recovery Efficiency</label>
+                    <div class="value">${stats.recoveryRate.toFixed(1)}%</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${stats.recoveryRate}%; 
+                            background: ${getColorForRecovery(stats.recoveryRate)};"></div>
+                    </div>
+                    <small>Higher is better</small>
                 </div>
             `;
             
             analysisGrid.innerHTML = content;
         }
 
-        function calculateStatistics(history) {
+        function getColorForConductance(value) {
+            if (value < GSR_THRESHOLDS.RELAXED) return 'var(--relaxed)';
+            if (value < GSR_THRESHOLDS.NORMAL) return 'var(--normal)';
+            if (value < GSR_THRESHOLDS.STRESSED) return 'var(--stressed)';
+            return 'var(--high-stress)';
+        }
+
+        function getColorForEvents(events) {
+            if (events < 10) return 'var(--relaxed)';
+            if (events < 30) return 'var(--normal)';
+            if (events < 50) return 'var(--stressed)';
+            return 'var(--high-stress)';
+        }
+
+        function getColorForDuration(duration) {
+            if (duration < 30) return 'var(--relaxed)';
+            if (duration < 60) return 'var(--normal)';
+            if (duration < 120) return 'var(--stressed)';
+            return 'var(--high-stress)';
+        }
+
+        function getColorForPercentage(percentage) {
+            if (percentage < 20) return 'var(--relaxed)';
+            if (percentage < 40) return 'var(--normal)';
+            if (percentage < 60) return 'var(--stressed)';
+            return 'var(--high-stress)';
+        }
+
+        function getColorForVariability(variability) {
+            if (variability < 1) return 'var(--relaxed)';
+            if (variability < 2) return 'var(--normal)';
+            if (variability < 4) return 'var(--stressed)';
+            return 'var(--high-stress)';
+        }
+
+        function getColorForRecovery(recovery) {
+            if (recovery > 80) return 'var(--relaxed)';
+            if (recovery > 60) return 'var(--normal)';
+            if (recovery > 40) return 'var(--stressed)';
+            return 'var(--high-stress)';
+        }
+
+        function calculateStatistics(data) {
             const now = Date.now();
-            const todayData = history.filter(item => 
+            const todayData = data.filter(item => 
                 now - item.timestamp < 24 * 60 * 60 * 1000);
             
             if (todayData.length === 0) return {
                 avgSCL: 0,
                 totalSCREvents: 0,
                 stressDuration: 0,
-                stressPercentage: 0
+                stressPercentage: 0,
+                stressVariability: 0,
+                recoveryRate: 0
             };
             
-            const avgSCL = todayData.reduce((sum, item) => sum + item.conductance, 0) / todayData.length;
+            const conductances = todayData.map(item => item.conductance);
+            const avgSCL = conductances.reduce((sum, val) => sum + val, 0) / conductances.length;
             const totalSCREvents = todayData.reduce((sum, item) => sum + (item.scrEvents || 0), 0);
-            const stressData = todayData.filter(item => item.conductance > 5);
+            const stressData = todayData.filter(item => item.conductance > GSR_THRESHOLDS.NORMAL);
             const stressDuration = Math.round(stressData.length * 5); // 5 minutes per reading
-            const stressPercentage = Math.round((stressData.length / todayData.length) * 100);
-            
-            return {
-                avgSCL,
-                totalSCREvents,
-                stressDuration,
-                stressPercentage
-            };
-        }
-
-        function safeParse(json) {
-            try {
-                return JSON.parse(json) || [];
-            } catch {
-                return [];
-            }
-        }
-
-        async function loadInitialData() {
-            try {
-                // Try to load from server first
-                await updateData();
-                
-                // If no data from server, check localStorage
-                if (!lastData) {
-                    const history = safeParse(localStorage.getItem('gsrHistory'));
-                    if (history.length > 0) {
-                        lastData = history[history.length - 1];
-                        updateUI(lastData);
-                        document.getElementById('current-status').textContent = 'Using Local Data';
-                    }
-                }
-            } catch (error) {
-                console.error('Initial data load failed:', error);
-            }
-            
-            // Start regular updates
-            setInterval(updateData, 1000);
-        }
-
-        async function updateData() {
-            try {
-                const response = await fetch('./data/gsr.json?t=' + Date.now());
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const rawData = await response.json();
-                lastData = processData(rawData);
-                
-                updateChart(lastData);
-                updateUI(lastData);
-                updateHistoricalData(lastData);
-                
-            } catch (error) {
-                console.error('Failed to update data:', error);
-                handleOfflineMode();
-            }
-        }
-
-        function processData(raw) {
-            const conductance = raw.conductance || 0;
-            const timestamp = raw.timestamp || Date.now();
-            
-            // Calculate derived metrics based on literature (Boucsein, 2012)
-            return {
-                timestamp,
-                conductance,
-                stressLevel: calculateStressLevel(conductance),
-                scrEvents: calculateSCREvents(conductance),
-                sclStatus: classifySCL(conductance)
-            };
-        }
-
-        function calculateStressLevel(conductance) {
-            // Formula based on Healey & Picard (2005)
-            return Math.min(100, Math.max(0, (conductance - 1) / 0.19));
-        }
-
-        function calculateSCREvents(conductance) {
-            // Simulate SCR events based on conductance fluctuations
-            return Math.floor(Math.random() * (conductance > 5 ? 5 : 3));
-        }
-
-        function classifySCL(conductance) {
-            // Classification based on Dawson et al. (2011)
-            if (conductance < 2) return 'Relaxed';
-            if (conductance < 5) return 'Normal';
-            if (conductance < 10) return 'Stressed';
-            return 'High Stress';
-        }
-
-        function updateChart(data) {
-            const labels = chart.data.labels;
-            const dataset = chart.data.datasets[0].data;
-            
-            // Format time as HH:MM:SS
-            const timeStr = new Date(data.timestamp).toLocaleTimeString();
-            labels.push(timeStr);
-            dataset.push(data.conductance);
-            
-            // Keep only the last 12 data points
-            if (labels.length > 12) {
-                labels.shift();
-                dataset.shift();
-            }
-            
-            chart.update();
-        }
-
-        function updateUI(data) {
-            if (!data) return;
-            
-            // Update main stress value
-            document.getElementById('current-stress').textContent = 
-                data.stressLevel.toFixed(1) + '%';
-            
-            // Update status text and color
-            const statusElem = document.getElementById('current-status');
-            statusElem.textContent = data.sclStatus;
-            
-            const statusColors = {
-                'Relaxed': 'var(--stress-low)',
-                'Normal': 'var(--stress-medium)',
-                'Stressed': 'var(--stress-high)',
-                'High Stress': 'var(--stress-high)'
-            };
-            statusElem.style.color = statusColors[data.sclStatus] || '#666';
-            
-            // Update stress indicator position
-            const indicator = document.getElementById('stress-indicator');
-            indicator.style.left = `${Math.min(100, (data.conductance / 20) * 100)}%`;
-        }
-
-        function updateHistoricalData(data) {
-            const history = safeParse(localStorage.getItem('gsrHistory'));
-            
-            history.push({
-                timestamp: data.timestamp,
-                conductance: data.conductance,
-                stressLevel: data.stressLevel,
-                scrEvents: data.scrEvents,
-                sclStatus: data.sclStatus
-            });
-            
-            // Keep only the last 24 hours of data (288 readings at 5 min intervals)
-            const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-            const recentHistory = history.filter(item => item.timestamp >= twentyFourHoursAgo);
-            
-            localStorage.setItem('gsrHistory', JSON.stringify(recentHistory));
-            
-            // Update historical stats
-            updateHistoricalStats(recentHistory);
-        }
-
-        function updateHistoricalStats(history) {
-            if (history.length === 0) return;
-            
-            const avgStress = history.reduce((sum, item) => sum + item.stressLevel, 0) / history.length;
-            const peakConductance = Math.max(...history.map(item => item.conductance));
-            
-            document.getElementById('avg-stress').textContent = avgStress.toFixed(1) + '%';
-            document.getElementById('peak-stress').textContent = peakConductance.toFixed(2) + 'μS';
-        }
-
-        function handleOfflineMode() {
-            const history = safeParse(localStorage.getItem('gsrHistory'));
-            
-            if (history.length > 0) {
-                const lastItem = history[history.length - 1];
-                updateUI(lastItem);
-                
-                const statusElem = document.getElementById('current-status');
-                statusElem.textContent = 'Offline Mode';
-                statusElem.style.color = '#666';
-            }
-        }
-    </script>
-</body>
-</html>
+            const stressPercentage =
