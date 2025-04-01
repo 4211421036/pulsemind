@@ -35,6 +35,7 @@ This contribution has been:
 
 ### Figure 1: Real-time Psychophysiological Metrics
 ![Real-time GSR Monitoring](https://4211421036.github.io/pulsemind/img/181849.png)
+
 *Caption 1: Real-time galvanic skin response (GSR) dashboard displaying:*
 - **Current Stress Index**: 36% (Normal range per Dawson et al., 2011)
 - **State Classification**: Normal arousal (2-5 μS range)
@@ -45,6 +46,7 @@ This contribution has been:
 
 ### Figure 2: Quantitative Electrodermal Metrics
 ![Quantitative EDA Metrics](https://4211421036.github.io/pulsemind/img/181904.png)
+
 *Caption 2: Key psychophysiological parameters over 24-hour period:*
 | Metric | Value | Clinical Interpretation |
 |--------|-------|-------------------------|
@@ -57,6 +59,7 @@ This contribution has been:
 
 ### Figure 3: Weekly Stress Profile
 ![Weekly Stress Trends](https://4211421036.github.io/pulsemind/img/181913.png)
+
 *Caption 3: Seven-day stress profile with 95% confidence intervals:*
 - **Peak Stress**: Tuesday (68 ± 10%) 
 - **Trough Stress**: Friday (31 ± 10%)
@@ -65,6 +68,7 @@ This contribution has been:
 
 ### Figure 4: Evidence-Based Interventions
 ![Stress Mitigation Recommendations](https://4211421036.github.io/pulsemind/img/181928.png)
+
 *Caption 4: Physiological stress interventions with demonstrated efficacy:*
 1. **Ambulation Therapy** (5-min walk reduces cortisol 14.8% - Thayer et al., 2009)
 2. **Hydration Protocol** (≥8 glasses maintains optimal electrolyte balance)
