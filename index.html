@@ -900,4 +900,272 @@
             const totalSCREvents = todayData.reduce((sum, item) => sum + (item.scrEvents || 0), 0);
             const stressData = todayData.filter(item => item.conductance > GSR_THRESHOLDS.NORMAL);
             const stressDuration = Math.round(stressData.length * 5); // 5 minutes per reading
-            const stressPercentage =
+            const stressPercentage = (stressData.length / todayData.length) * 100;
+            
+            // Calculate variability (standard deviation)
+            const squaredDiffs = conductances.map(val => Math.pow(val - avgSCL, 2));
+            const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / conductances.length;
+            const stressVariability = Math.sqrt(variance);
+
+            // Calculate recovery rate (simplified)
+            const recoveryPeriods = todayData.filter(item => 
+                item.conductance < GSR_THRESHOLDS.NORMAL && 
+                item.conductance < avgSCL
+            ).length;
+            const recoveryRate = (recoveryPeriods / todayData.length) * 100;
+
+            return {
+                avgSCL,
+                totalSCREvents,
+                stressDuration,
+                stressPercentage,
+                stressVariability,
+                recoveryRate
+            };
+        }
+
+        function loadInitialData() {
+            // Simulate loading some initial data
+            const now = Date.now();
+            for (let i = 0; i < 30; i++) {
+                historicalData.push({
+                    timestamp: now - (30 - i) * 5 * 60 * 1000, // 5 minute intervals
+                    conductance: Math.random() * 15 + 1,
+                    scrEvents: Math.floor(Math.random() * 3)
+                });
+            }
+            
+            // Update UI with initial data
+            updateUI(historicalData[historicalData.length - 1]);
+        }
+
+        function updateUI(data) {
+            const stressLevel = calculateStressLevel(data.conductance);
+            const status = getStatusForConductance(data.conductance);
+            
+            // Update real-time display
+            document.getElementById('current-stress').textContent = `${stressLevel.toFixed(0)}%`;
+            document.getElementById('current-status').textContent = status.text;
+            document.getElementById('current-status').style.background = status.color;
+            document.getElementById('current-status').style.color = '#fff';
+            
+            // Update stress indicator position
+            const indicator = document.getElementById('stress-indicator');
+            indicator.style.left = `${Math.min(100, Math.max(0, stressLevel))}%`;
+            indicator.style.borderColor = status.color;
+            
+            // Update metrics
+            const stats = calculateStatistics(historicalData);
+            document.getElementById('avg-stress').textContent = `${stats.avgSCL.toFixed(1)} μS`;
+            document.getElementById('peak-stress').textContent = `${Math.max(...historicalData.map(d => d.conductance)).toFixed(1)} μS`;
+            document.getElementById('stress-duration').textContent = `${stats.stressDuration} mins`;
+            document.getElementById('recovery-rate').textContent = `${stats.recoveryRate.toFixed(0)}%`;
+            
+            // Update trends
+            updateTrendIndicators();
+        }
+
+        function calculateStressLevel(conductance) {
+            // Normalize conductance to 0-100% based on thresholds
+            if (conductance <= GSR_THRESHOLDS.RELAXED) {
+                return (conductance / GSR_THRESHOLDS.RELAXED) * 25;
+            } else if (conductance <= GSR_THRESHOLDS.NORMAL) {
+                return 25 + ((conductance - GSR_THRESHOLDS.RELAXED) / (GSR_THRESHOLDS.NORMAL - GSR_THRESHOLDS.RELAXED)) * 25;
+            } else if (conductance <= GSR_THRESHOLDS.STRESSED) {
+                return 50 + ((conductance - GSR_THRESHOLDS.NORMAL) / (GSR_THRESHOLDS.STRESSED - GSR_THRESHOLDS.NORMAL)) * 25;
+            } else {
+                return 75 + (Math.min(conductance - GSR_THRESHOLDS.STRESSED, GSR_THRESHOLDS.HIGH_STRESS - GSR_THRESHOLDS.STRESSED) / 
+                    (GSR_THRESHOLDS.HIGH_STRESS - GSR_THRESHOLDS.STRESSED) * 25;
+            }
+        }
+
+        function getStatusForConductance(conductance) {
+            if (conductance < GSR_THRESHOLDS.RELAXED) {
+                return { text: 'Relaxed', color: 'var(--relaxed)' };
+            } else if (conductance < GSR_THRESHOLDS.NORMAL) {
+                return { text: 'Normal', color: 'var(--normal)' };
+            } else if (conductance < GSR_THRESHOLDS.STRESSED) {
+                return { text: 'Stressed', color: 'var(--stressed)' };
+            } else {
+                return { text: 'High Stress', color: 'var(--high-stress)' };
+            }
+        }
+
+        function updateTrendIndicators() {
+            // Simplified trend calculation
+            const recentData = historicalData.slice(-10);
+            const olderData = historicalData.slice(-20, -10);
+            
+            if (recentData.length === 0 || olderData.length === 0) return;
+            
+            const recentAvg = recentData.reduce((sum, d) => sum + d.conductance, 0) / recentData.length;
+            const olderAvg = olderData.reduce((sum, d) => sum + d.conductance, 0) / olderData.length;
+            
+            const trend = recentAvg - olderAvg;
+            const trendClass = trend > 0.5 ? 'trend-up' : trend < -0.5 ? 'trend-down' : 'trend-stable';
+            const trendIcon = trend > 0.5 ? 'fa-arrow-up' : trend < -0.5 ? 'fa-arrow-down' : 'fa-minus';
+            const trendText = trend > 0.5 ? 'Increasing' : trend < -0.5 ? 'Decreasing' : 'Stable';
+            
+            document.querySelectorAll('.trend').forEach(el => {
+                el.className = 'trend ' + trendClass;
+                el.innerHTML = `<i class="fas ${trendIcon}"></i> ${trendText}`;
+            });
+        }
+
+        function generateHourlyForecast() {
+            const now = new Date();
+            const hours = [];
+            
+            for (let i = 0; i < 12; i++) {
+                const hour = new Date(now.getTime() + i * 60 * 60 * 1000);
+                const hourString = hour.getHours() + ':00';
+                const stressLevel = Math.min(100, Math.max(0, 
+                    (Math.sin(i / 2) * 30 + 50 + (Math.random() * 20 - 10)));
+                const status = getStatusForConductance(
+                    stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100
+                );
+                
+                hours.push(`
+                    <div class="forecast-hour">
+                        <div class="forecast-time">${hourString}</div>
+                        <div class="forecast-icon" style="background: ${status.color}">
+                            <i class="fas ${getIconForStatus(status.text)}"></i>
+                        </div>
+                        <div class="forecast-value">${stressLevel.toFixed(0)}%</div>
+                    </div>
+                `);
+            }
+            
+            hourlyForecast.innerHTML = hours.join('');
+        }
+
+        function generateWeeklyData() {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = new Date().getDay();
+            
+            const weekData = days.map((day, index) => {
+                const isToday = index === today;
+                const stressLevel = Math.min(100, Math.max(0, 
+                    (Math.sin(index) * 20 + 50 + (Math.random() * 20 - 10)));
+                const status = getStatusForConductance(
+                    stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100
+                );
+                
+                return `
+                    <div class="weekly-day ${isToday ? 'today' : ''}">
+                        <div class="day">${day}</div>
+                        <div class="stress-icon" style="background: ${status.color}">
+                            <i class="fas ${getIconForStatus(status.text)}"></i>
+                        </div>
+                        <div class="stress-level">${stressLevel.toFixed(0)}%</div>
+                        <div class="stress-range">${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%</div>
+                    </div>
+                `;
+            });
+            
+            weeklyGrid.innerHTML = weekData.join('');
+        }
+
+        function getIconForStatus(status) {
+            switch(status.toLowerCase()) {
+                case 'relaxed': return 'fa-smile';
+                case 'normal': return 'fa-meh';
+                case 'stressed': return 'fa-frown';
+                case 'high stress': return 'fa-dizzy';
+                default: return 'fa-question';
+            }
+        }
+
+        function generateRecommendations() {
+            const recommendations = [
+                {
+                    icon: 'fa-walking',
+                    color: 'var(--relaxed)',
+                    title: 'Take a Short Walk',
+                    content: 'A 5-minute walk can help reduce stress and improve circulation.'
+                },
+                {
+                    icon: 'fa-water',
+                    color: 'var(--primary)',
+                    title: 'Drink Water',
+                    content: 'Dehydration can increase stress responses. Drink at least 8 glasses daily.'
+                },
+                {
+                    icon: 'fa-wind',
+                    color: 'var(--normal)',
+                    title: 'Deep Breathing',
+                    content: 'Practice 4-7-8 breathing: Inhale 4s, hold 7s, exhale 8s.'
+                },
+                {
+                    icon: 'fa-headphones',
+                    color: 'var(--stressed)',
+                    title: 'Listen to Music',
+                    content: 'Calming music at 60 BPM can synchronize with your brain waves.'
+                }
+            ];
+            
+            const recommendationsHTML = recommendations.map(rec => `
+                <div class="recommendation-item">
+                    <div class="recommendation-icon" style="background: ${rec.color}">
+                        <i class="fas ${rec.icon}"></i>
+                    </div>
+                    <div class="recommendation-content">
+                        <h4>${rec.title}</h4>
+                        <p>${rec.content}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            recommendationsContainer.innerHTML = recommendationsHTML;
+        }
+
+        // Simulate real-time data updates
+        setInterval(() => {
+            const now = Date.now();
+            const lastConductance = historicalData.length > 0 ? 
+                historicalData[historicalData.length - 1].conductance : 5;
+            
+            // Simulate new data point with some randomness
+            const newConductance = Math.max(1, 
+                lastConductance + (Math.random() * 2 - 1) * 0.5);
+            
+            const newData = {
+                timestamp: now,
+                conductance: newConductance,
+                scrEvents: Math.floor(Math.random() * 3)
+            };
+            
+            historicalData.push(newData);
+            
+            // Keep only the last 500 data points
+            if (historicalData.length > 500) {
+                historicalData.shift();
+            }
+            
+            // Update chart
+            updateChart(newData);
+            updateUI(newData);
+        }, 5000); // Update every 5 seconds
+
+        function updateChart(data) {
+            const now = new Date(data.timestamp);
+            const timeLabel = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            // Add new data to chart
+            chart.data.labels.push(timeLabel);
+            chart.data.datasets[0].data.push(data.conductance);
+            
+            // Remove old data if needed
+            if (chart.data.labels.length > 30) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            
+            chart.update();
+        }
+
+        // Start with some initial data
+        loadInitialData();
+    </script>
+</body>
+</html>
