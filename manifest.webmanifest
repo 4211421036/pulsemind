@@ -1,0 +1,80 @@
+{
+  "name": "PulseMind GSR Monitor",
+  "short_name": "PulseMind",
+  "description": "Real-time Electrodermal Activity Monitoring System",
+  "start_url": "/pulsemind/",
+  "scope": "/pulsemind/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#15193B",
+  "theme_color": "#4A90E2",
+  "icons": [
+      {
+          "src": "/logo/192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+      },
+      {
+          "src": "/logo/512x512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+      },
+      {
+          "src": "/345677.png",
+          "sizes": "637x436",
+          "type": "image/png"
+      }
+  ],
+  "screenshots": [
+    {
+      "src": "/pulsemind/assets/screenshots/dashboard-1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "GSR Dashboard View"
+    },
+    {
+      "src": "/pulsemind/assets/screenshots/analytics-1.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Stress Analytics"
+    }
+  ],
+  "features": [
+    "Cross-platform",
+    "Offline data collection",
+    "Biomedical visualization"
+  ],
+  "categories": [
+    "health",
+    "medical",
+    "productivity"
+  ],
+  "shortcuts": [
+    {
+      "name": "New Measurement",
+      "short_name": "Measure",
+      "description": "Start new GSR recording session",
+      "url": "/pulsemind/new-session",
+      "icons": [
+        {
+          "src": "/pulsemind/assets/icons/measure-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "View Trends",
+      "short_name": "Trends",
+      "description": "Analyze historical stress patterns",
+      "url": "/pulsemind/trends"
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+pulsemind",
+      "url": "/pulsemind/?url=%s"
+    }
+  ]
+}
