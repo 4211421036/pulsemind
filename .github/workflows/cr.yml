@@ -1,0 +1,81 @@
+name: Validate Contributions
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'firmware/**'
+      - 'web-dashboard/**'
+
+jobs:
+  validate-contributions:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Validate Arduino Code
+      if: contains(github.event.pull_request.changed_files, 'firmware/')
+      run: |
+        # Check for required headers
+        grep -q '#include <WiFi.h>' firmware/pulsemind.ino || \
+          (echo "Missing required WiFi library" && exit 1)
+        
+        # Check for main functions
+        grep -q 'void setup()' firmware/pulsemind.ino || \
+          (echo "Missing setup() function" && exit 1)
+        
+        echo "Arduino code validation passed"
+
+    - name: Validate HTML Structure
+      if: contains(github.event.pull_request.changed_files, 'web-dashboard/')
+      run: |
+        # Check for required meta tags
+        grep -q '<meta charset="UTF-8">' web-dashboard/index.html || \
+          (echo "Missing charset meta tag" && exit 1)
+        
+        # Check for Chart.js inclusion
+        grep -q 'cdnjs.cloudflare.com/ajax/libs/Chart.js' web-dashboard/index.html || \
+          (echo "Missing Chart.js dependency" && exit 1)
+        
+        echo "HTML validation passed"
+
+    - name: Check Documentation
+      run: |
+        # Verify all new functions have docstrings
+        if grep -r '^[a-zA-Z]' firmware/ web-dashboard/ | grep -v '/\*\*' | grep -v '^\s*//'; then
+          echo "Found undocumented functions - please add docstrings"
+          exit 1
+        fi
+        
+        echo "Documentation check passed"
+
+    - name: Comment on PR
+      uses: actions/github-script@v6
+      if: always()
+      with:
+        script: |
+          const { data: checks } = await github.rest.checks.listForRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: context.payload.pull_request.head.sha
+          });
+          
+          const conclusion = checks.check_runs.find(r => r.name === 'Validate Contributions').conclusion;
+          
+          if (conclusion === 'success') {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Your contribution passed all automated checks! A maintainer will review it shortly.'
+            });
+          } else {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ Some checks failed. Please review the errors and update your PR.'
+            });
+          }
