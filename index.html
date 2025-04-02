@@ -523,7 +523,7 @@
 
         @media (max-width: 768px) {
             .weekly-grid {
-                grid-template-columns: repeat(7, 80px);
+                grid-template-columns: repeat(4, 80px);
             }
         }
 
@@ -970,24 +970,23 @@
         });
     </script>
     <script>
-        // Add this to your JavaScript file
-
-// Create and insert the translation button
+        // Create and insert the translation button
 function createTranslationButton() {
-  const translationButton = document.createElement('button');
+  const translationButton = document.createElement('div');
   translationButton.id = 'translate-btn';
   translationButton.className = 'translate-btn';
+  translationButton.setAttribute('role', 'button');
   translationButton.setAttribute('aria-label', 'Toggle between Indonesian and English');
   translationButton.title = 'Press T to toggle language (T)';
+  translationButton.tabIndex = 0;
   
-  // Insert the button in the header area
-  const dashboardElement = document.querySelector('.dashboard');
-  dashboardElement.insertAdjacentElement('afterbegin', translationButton);
+  // Insert the button in the body
+  document.body.appendChild(translationButton);
   
   return translationButton;
 }
 
-// Dictionary for translations
+// Dictionary for translations (updated with new content)
 const translations = {
   english: {
     'Overview': 'Overview',
@@ -1018,7 +1017,14 @@ const translations = {
     'Progress & Achievements': 'Progress & Achievements',
     'Personalized Alerts': 'Personalized Alerts',
     'Mental Health Analysis': 'Mental Health Analysis',
-    // Add more translations as needed
+    'Take a Short Walk': 'Take a Short Walk',
+    'A 5-minute walk can help reduce stress and improve circulation.': 'A 5-minute walk can help reduce stress and improve circulation.',
+    'Drink Water': 'Drink Water',
+    'Dehydration can increase stress responses. Drink at least 8 glasses daily.': 'Dehydration can increase stress responses. Drink at least 8 glasses daily.',
+    'Deep Breathing': 'Deep Breathing',
+    'Practice 4-7-8 breathing: Inhale 4s, hold 7s, exhale 8s.': 'Practice 4-7-8 breathing: Inhale 4s, hold 7s, exhale 8s.',
+    'Listen to Music': 'Listen to Music',
+    'Calming music at 60 BPM can synchronize with your brain waves.': 'Calming music at 60 BPM can synchronize with your brain waves.'
   },
   indonesian: {
     'Overview': 'Ikhtisar',
@@ -1049,7 +1055,14 @@ const translations = {
     'Progress & Achievements': 'Kemajuan & Pencapaian',
     'Personalized Alerts': 'Peringatan Personal',
     'Mental Health Analysis': 'Analisis Kesehatan Mental',
-    // Add more translations as needed
+    'Take a Short Walk': 'Berjalan Sebentar',
+    'A 5-minute walk can help reduce stress and improve circulation.': 'Jalan 5 menit dapat membantu mengurangi stres dan meningkatkan sirkulasi.',
+    'Drink Water': 'Minum Air',
+    'Dehydration can increase stress responses. Drink at least 8 glasses daily.': 'Dehidrasi dapat meningkatkan respons stres. Minum setidaknya 8 gelas sehari.',
+    'Deep Breathing': 'Pernapasan Dalam',
+    'Practice 4-7-8 breathing: Inhale 4s, hold 7s, exhale 8s.': 'Praktikkan pernapasan 4-7-8: Tarik napas 4 detik, tahan 7 detik, hembuskan 8 detik.',
+    'Listen to Music': 'Dengarkan Musik',
+    'Calming music at 60 BPM can synchronize with your brain waves.': 'Musik menenangkan dengan 60 BPM dapat menyelaraskan dengan gelombang otak Anda.'
   }
 };
 
@@ -1059,7 +1072,7 @@ const originalTexts = new Map();
 // Function to translate the UI
 function translateUI(language) {
   const dict = translations[language];
-  const elements = document.querySelectorAll('h2, h3, button, span, div.status, label, div.trend');
+  const elements = document.querySelectorAll('h1, h2, h3, h4, button, span, div.status, label, div.trend, p, a, li');
   
   elements.forEach(element => {
     // Skip the translation button itself
@@ -1076,21 +1089,21 @@ function translateUI(language) {
       element.textContent = dict[originalText];
     }
     
-    // For special cases like buttons with icons
-    if (element.tagName === 'BUTTON' && element.querySelector('.fas')) {
+    // For elements with icons
+    if (element.querySelector('.fas, .fa')) {
       if (!originalTexts.has(element)) {
         // Get only the text part
-        const buttonText = Array.from(element.childNodes)
+        const elementText = Array.from(element.childNodes)
                                .filter(node => node.nodeType === Node.TEXT_NODE)
                                .map(node => node.nodeValue.trim())
                                .join(' ').trim();
-        originalTexts.set(element, buttonText);
+        originalTexts.set(element, elementText);
       }
       
-      const buttonText = originalTexts.get(element);
-      if (dict[buttonText]) {
-        const icon = element.querySelector('.fas').outerHTML;
-        element.innerHTML = icon + ' ' + dict[buttonText];
+      const elementText = originalTexts.get(element);
+      if (dict[elementText]) {
+        const icon = element.querySelector('.fas, .fa').outerHTML;
+        element.innerHTML = icon + ' ' + dict[elementText];
       }
     }
   });
@@ -1105,10 +1118,16 @@ function translateUI(language) {
 // Update the translate button based on current language
 function updateTranslateButton(currentLanguage) {
   const translateBtn = document.getElementById('translate-btn');
-  if (currentLanguage === 'english') {
-    translateBtn.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> Bahasa Indonesia';
-  } else {
-    translateBtn.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> English';
+  if (window.innerWidth <= 768) { // Mobile view
+    translateBtn.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span>';
+    translateBtn.setAttribute('aria-label', currentLanguage === 'english' ? 
+      'Switch to Bahasa Indonesia' : 'Switch to English');
+  } else { // Desktop view
+    if (currentLanguage === 'english') {
+      translateBtn.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> Bahasa Indonesia';
+    } else {
+      translateBtn.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> English';
+    }
   }
 }
 
@@ -1133,6 +1152,14 @@ function initTranslation() {
     translateUI(currentLanguage);
   });
   
+  // Toggle language on Enter key (for accessibility)
+  translateBtn.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      currentLanguage = currentLanguage === 'english' ? 'indonesian' : 'english';
+      translateUI(currentLanguage);
+    }
+  });
+  
   // Toggle language on 'T' key press
   document.addEventListener('keydown', (event) => {
     if (event.key === 't' || event.key === 'T') {
@@ -1143,6 +1170,11 @@ function initTranslation() {
       setTimeout(() => translateBtn.classList.remove('active'), 200);
     }
   });
+  
+  // Handle window resize for responsive button
+  window.addEventListener('resize', () => {
+    updateTranslateButton(currentLanguage);
+  });
 }
 
 // Add CSS for the translation button
@@ -1150,25 +1182,28 @@ function addTranslationStyles() {
   const style = document.createElement('style');
   style.textContent = `
     .translate-btn {
-      position: absolute;
-      top: 20px;
+      position: fixed;
+      bottom: 20px;
       right: 20px;
       background-color: #25548b;
       color: white;
       border: none;
-      border-radius: 4px;
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      cursor: pointer;
       z-index: 100;
       transition: all 0.2s ease;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
     
-    .translate-btn:hover {
+    .translate-btn:hover, .translate-btn:focus {
       background-color: #0056b3;
+      transform: scale(1.1);
+      outline: none;
     }
     
     .translate-btn.active {
@@ -1177,7 +1212,24 @@ function addTranslationStyles() {
     }
     
     .translate-btn .fas {
-      font-size: 16px;
+      font-size: 20px;
+    }
+    
+    /* Desktop styles */
+    @media (min-width: 769px) {
+      .translate-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: auto;
+        height: auto;
+        padding: 8px 16px;
+        border-radius: 4px;
+      }
+      
+      .translate-btn .fas {
+        font-size: 16px;
+      }
     }
   `;
   document.head.appendChild(style);
