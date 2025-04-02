@@ -902,7 +902,7 @@
     </div>
 
 <script>
-// DOM Elements
+// DOM Elements with null checks
 const modal = document.getElementById('detail-modal');
 const modalOverlay = document.getElementById('modal-overlay');
 const closeModalBtn = document.getElementById('close-modal');
@@ -911,19 +911,21 @@ const analysisGrid = document.getElementById('analysis-grid');
 const hourlyForecast = document.getElementById('hourly-forecast');
 const weeklyGrid = document.getElementById('weekly-grid');
 const recommendationsContainer = document.getElementById('recommendations');
+const tabs = document.querySelectorAll('.nav-tab');
+const tabContents = document.querySelectorAll('.tab-content');
 
 // Chart instances
-let chart = null; // Original GSR chart
-let trendChart = null; // Long-term trend chart
-let weeklyPatternChart = null; // Weekly pattern chart
-let timeOfDayChart = null; // Time of day chart
+let chart = null;
+let trendChart = null;
+let weeklyPatternChart = null;
+let timeOfDayChart = null;
 
 // Data Configuration
 const DATA_URL = 'https://4211421036.github.io/pulsemind/data/gsr.json';
 const LOCAL_STORAGE_KEY = 'pulsemind_historical_data';
-const MAX_HISTORY_ITEMS = 500; // Store up to 500 readings
+const MAX_HISTORY_ITEMS = 500;
 
-// GSR thresholds based on research (Boucsein, 2012)
+// GSR thresholds
 const GSR_THRESHOLDS = {
     RELAXED: 2.0,
     NORMAL: 5.0,
@@ -935,37 +937,153 @@ const GSR_THRESHOLDS = {
 let historicalData = [];
 let lastData = null;
 
-// Initialize the application
+// Initialize the application with error handling
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Set up event listeners first
         setupEventListeners();
+        
+        // Load data before initializing UI
         await loadInitialData();
-        initCharts(); // Initialize charts after data is loaded
+        
+        // Initialize charts and UI components
+        initCharts();
         generateWeeklyData();
         generateHourlyForecast();
         generateRecommendations();
+        
+        // Start data refresh
         startDataRefresh();
         
-        // Generate insights if we're already on the insights tab
-        if (document.querySelector('.nav-tab.active')?.getAttribute('data-tab') === 'insights') {
-            generateInsightsContent();
-        }
+        // Update ARIA attributes for active tab
+        updateTabAccessibility();
+        
     } catch (error) {
         console.error('Initialization error:', error);
-        loadSampleData(); // Fallback to sample data
+        loadSampleData();
     }
 });
 
-// Initialize all charts
+// Initialize all charts with accessibility features
 function initCharts() {
     try {
-        // Initialize main GSR chart if element exists
-        const gsrChartEl = document.getElementById('gsrChart');
-        if (gsrChartEl) {
-            initGSRChart();
+        // Main GSR Chart
+        const gsrCtx = document.getElementById('gsrChart')?.getContext('2d');
+        if (gsrCtx) {
+            chart = new Chart(gsrCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Skin Conductance (μS)',
+                        data: [],
+                        borderColor: '#4A90E2',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                        pointBackgroundColor: '#4A90E2',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(30, 39, 70, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Conductance: ${context.raw.toFixed(2)} μS`;
+                                },
+                                afterLabel: function(context) {
+                                    return `Stress Level: ${calculateStressLevel(context.raw).toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            border: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'μS',
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            suggestedMax: 15
+                        },
+                        x: {
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    size: 10
+                                },
+                                maxRotation: 0
+                            },
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    elements: {
+                        line: {
+                            borderWidth: 2
+                        },
+                        point: {
+                            radius: 0,
+                            hoverRadius: 6
+                        }
+                    }
+                }
+            });
+
+            // Add ARIA label to canvas
+            gsrCtx.canvas.setAttribute('aria-label', 'Skin conductance over time chart showing real-time stress levels');
+            gsrCtx.canvas.setAttribute('role', 'img');
+            
+            // Update chart with existing data if available
+            if (historicalData.length > 0) {
+                updateChartWithHistory();
+            }
         }
 
-        // Initialize trend charts only when on trends tab and elements exist
+        // Initialize trend charts if on trends tab
         const activeTab = document.querySelector('.nav-tab.active')?.getAttribute('data-tab');
         if (activeTab === 'trends') {
             initTrendCharts();
@@ -975,124 +1093,7 @@ function initCharts() {
     }
 }
 
-// Initialize the main GSR chart
-function initGSRChart() {
-    const ctx = document.getElementById('gsrChart')?.getContext('2d');
-    if (!ctx) {
-        console.warn('GSR chart canvas not found');
-        return;
-    }
-
-    chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Skin Conductance (μS)',
-                data: [],
-                borderColor: '#4A90E2',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true,
-                backgroundColor: 'rgba(74, 144, 226, 0.1)',
-                pointBackgroundColor: '#4A90E2',
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: 'rgba(30, 39, 70, 0.9)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                    borderWidth: 1,
-                    padding: 10,
-                    displayColors: false,
-                    callbacks: {
-                        label: function(context) {
-                            return `Conductance: ${context.raw.toFixed(2)} μS`;
-                        },
-                        afterLabel: function(context) {
-                            return `Stress Level: ${calculateStressLevel(context.raw).toFixed(1)}%`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        font: {
-                            size: 10
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    border: {
-                        display: false
-                    },
-                    title: {
-                        display: true,
-                        text: 'μS',
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        }
-                    },
-                    suggestedMax: 15
-                },
-                x: {
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        font: {
-                            size: 10
-                        },
-                        maxRotation: 0
-                    },
-                    grid: {
-                        display: false
-                    },
-                    border: {
-                        display: false
-                    }
-                }
-            },
-            interaction: {
-                mode: 'nearest',
-                axis: 'x',
-                intersect: false
-            },
-            elements: {
-                line: {
-                    borderWidth: 2
-                },
-                point: {
-                    radius: 0,
-                    hoverRadius: 6
-                }
-            }
-        }
-    });
-
-    // Update chart with existing data if available
-    if (historicalData.length > 0) {
-        updateChartWithHistory();
-    }
-}
-
-// Initialize trend charts only when needed
+// Initialize trend charts with accessibility
 function initTrendCharts() {
     try {
         // Long-term trend chart
@@ -1101,7 +1102,7 @@ function initTrendCharts() {
             trendChart = new Chart(trendCtx, {
                 type: 'line',
                 data: {
-                    labels: generateDateLabels(7), // Last 7 days
+                    labels: generateDateLabels(7),
                     datasets: [{
                         label: 'Stress Level',
                         data: generateRandomData(7, 30, 70),
@@ -1113,6 +1114,8 @@ function initTrendCharts() {
                 },
                 options: getTrendChartOptions('7-Day Stress Trend')
             });
+            trendCtx.canvas.setAttribute('aria-label', '7-day stress trend chart');
+            trendCtx.canvas.setAttribute('role', 'img');
         }
 
         // Weekly pattern chart
@@ -1132,6 +1135,8 @@ function initTrendCharts() {
                 },
                 options: getTrendChartOptions('Weekly Stress Patterns')
             });
+            weeklyCtx.canvas.setAttribute('aria-label', 'Weekly stress patterns chart');
+            weeklyCtx.canvas.setAttribute('role', 'img');
         }
 
         // Time of day chart
@@ -1153,9 +1158,11 @@ function initTrendCharts() {
                 },
                 options: getTrendChartOptions('Average Stress by Time of Day')
             });
+            timeCtx.canvas.setAttribute('aria-label', 'Time of day stress analysis chart');
+            timeCtx.canvas.setAttribute('role', 'img');
         }
     } catch (error) {
-        console.error('Error initializing trend charts:', error);
+        console.error('Trend chart initialization error:', error);
     }
 }
 
@@ -1191,29 +1198,29 @@ function getTrendChartOptions(title) {
     };
 }
 
-// Generate insights content
+// Generate accessible insights content
 function generateInsightsContent() {
     try {
         // Stress triggers
         const stressTriggersEl = document.getElementById('stress-triggers');
         if (stressTriggersEl) {
             stressTriggersEl.innerHTML = `
-                <div class="insight-item">
-                    <div class="insight-icon" style="background: var(--high-stress)">
-                        <i aria-hidden="true" class="fas fa-briefcase"></i>
+                <div class="insight-item" role="listitem">
+                    <div class="insight-icon" style="background: var(--high-stress)" aria-hidden="true">
+                        <i class="fas fa-briefcase"></i>
                     </div>
                     <div class="insight-content">
-                        <h4>Work Meetings</h4>
-                        <p>75% correlation with stress spikes</p>
+                        <h4 id="trigger1">Work Meetings</h4>
+                        <p aria-labelledby="trigger1">75% correlation with stress spikes</p>
                     </div>
                 </div>
-                <div class="insight-item">
-                    <div class="insight-icon" style="background: var(--stressed)">
-                        <i aria-hidden="true" class="fas fa-mobile-alt"></i>
+                <div class="insight-item" role="listitem">
+                    <div class="insight-icon" style="background: var(--stressed)" aria-hidden="true">
+                        <i class="fas fa-mobile-alt"></i>
                     </div>
                     <div class="insight-content">
-                        <h4>Screen Time</h4>
-                        <p>60% correlation with elevated stress</p>
+                        <h4 id="trigger2">Screen Time</h4>
+                        <p aria-labelledby="trigger2">60% correlation with elevated stress</p>
                     </div>
                 </div>
             `;
@@ -1223,22 +1230,22 @@ function generateInsightsContent() {
         const keyInsightsEl = document.getElementById('key-insights');
         if (keyInsightsEl) {
             keyInsightsEl.innerHTML = `
-                <div class="insight-item positive">
-                    <div class="insight-icon">
-                        <i aria-hidden="true" class="fas fa-arrow-down"></i>
+                <div class="insight-item positive" role="listitem">
+                    <div class="insight-icon" aria-hidden="true">
+                        <i class="fas fa-arrow-down"></i>
                     </div>
                     <div class="insight-content">
-                        <h4>Improving Trend</h4>
-                        <p>Your average stress has decreased by 15% this week</p>
+                        <h4 id="insight1">Improving Trend</h4>
+                        <p aria-labelledby="insight1">Your average stress has decreased by 15% this week</p>
                     </div>
                 </div>
-                <div class="insight-item negative">
-                    <div class="insight-icon">
-                        <i aria-hidden="true" class="fas fa-exclamation"></i>
+                <div class="insight-item negative" role="listitem">
+                    <div class="insight-icon" aria-hidden="true">
+                        <i class="fas fa-exclamation"></i>
                     </div>
                     <div class="insight-content">
-                        <h4>Midweek Spike</h4>
-                        <p>Wednesdays are consistently your most stressful day</p>
+                        <h4 id="insight2">Midweek Spike</h4>
+                        <p aria-labelledby="insight2">Wednesdays are consistently your most stressful day</p>
                     </div>
                 </div>
             `;
@@ -1248,17 +1255,19 @@ function generateInsightsContent() {
         const correlationInsightsEl = document.getElementById('correlation-insights');
         if (correlationInsightsEl) {
             correlationInsightsEl.innerHTML = `
-                <div class="correlation-item">
-                    <div class="correlation-label">Exercise</div>
+                <div class="correlation-item" role="listitem">
+                    <div class="correlation-label" id="corr1">Exercise</div>
                     <div class="correlation-bar">
-                        <div class="correlation-fill" style="width: 65%; background: var(--relaxed)"></div>
+                        <div class="correlation-fill" style="width: 65%; background: var(--relaxed)" 
+                             role="progressbar" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100" aria-labelledby="corr1"></div>
                     </div>
                     <div class="correlation-value">65% negative correlation</div>
                 </div>
-                <div class="correlation-item">
-                    <div class="correlation-label">Sleep Quality</div>
+                <div class="correlation-item" role="listitem">
+                    <div class="correlation-label" id="corr2">Sleep Quality</div>
                     <div class="correlation-bar">
-                        <div class="correlation-fill" style="width: 72%; background: var(--relaxed)"></div>
+                        <div class="correlation-fill" style="width: 72%; background: var(--relaxed)" 
+                             role="progressbar" aria-valuenow="72" aria-valuemin="0" aria-valuemax="100" aria-labelledby="corr2"></div>
                     </div>
                     <div class="correlation-value">72% negative correlation</div>
                 </div>
@@ -1269,13 +1278,13 @@ function generateInsightsContent() {
         const achievementsEl = document.getElementById('achievements');
         if (achievementsEl) {
             achievementsEl.innerHTML = `
-                <div class="achievement-item">
-                    <div class="achievement-badge">
+                <div class="achievement-item" role="listitem">
+                    <div class="achievement-badge" aria-hidden="true">
                         <i class="fas fa-fire"></i>
                     </div>
                     <div class="achievement-content">
-                        <h4>7-Day Streak</h4>
-                        <p>You've logged data for 7 consecutive days</p>
+                        <h4 id="achieve1">7-Day Streak</h4>
+                        <p aria-labelledby="achieve1">You've logged data for 7 consecutive days</p>
                     </div>
                 </div>
             `;
@@ -1285,13 +1294,13 @@ function generateInsightsContent() {
         const alertsEl = document.getElementById('personalized-alerts');
         if (alertsEl) {
             alertsEl.innerHTML = `
-                <div class="alert-item">
-                    <div class="alert-icon">
-                        <i aria-hidden="true" class="fas fa-bell"></i>
+                <div class="alert-item" role="alert" aria-live="polite">
+                    <div class="alert-icon" aria-hidden="true">
+                        <i class="fas fa-bell"></i>
                     </div>
                     <div class="alert-content">
-                        <h4>Upcoming Stressful Period</h4>
-                        <p>Tomorrow between 2PM-4PM is typically stressful for you</p>
+                        <h4 id="alert1">Upcoming Stressful Period</h4>
+                        <p aria-labelledby="alert1">Tomorrow between 2PM-4PM is typically stressful for you</p>
                     </div>
                 </div>
             `;
@@ -1301,24 +1310,263 @@ function generateInsightsContent() {
     }
 }
 
-// Helper functions for data generation
-function generateDateLabels(count) {
-    const labels = [];
-    const now = new Date();
-    for (let i = count - 1; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        labels.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
+// Setup event listeners with accessibility
+function setupEventListeners() {
+    try {
+        // Modal controls
+        if (detailBtn) {
+            detailBtn.addEventListener('click', showDetailModal);
+            detailBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    showDetailModal();
+                }
+            });
+        }
+
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', hideDetailModal);
+            closeModalBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    hideDetailModal();
+                }
+            });
+        }
+
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', hideDetailModal);
+        }
+
+        // Tab navigation with keyboard support
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => switchTab(index));
+            
+            tab.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    switchTab(index);
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    const nextIndex = (index + 1) % tabs.length;
+                    switchTab(nextIndex);
+                    tabs[nextIndex].focus();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const prevIndex = (index - 1 + tabs.length) % tabs.length;
+                    switchTab(prevIndex);
+                    tabs[prevIndex].focus();
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    switchTab(0);
+                    tabs[0].focus();
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    switchTab(tabs.length - 1);
+                    tabs[tabs.length - 1].focus();
+                }
+            });
+        });
+
+        // Keyboard accessibility for modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal?.style.display === 'block') {
+                hideDetailModal();
+            }
+            
+            // Trap focus in modal when open
+            if (modal?.style.display === 'block' && e.key === 'Tab') {
+                const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+                
+                if (e.shiftKey && document.activeElement === firstElement) {
+                    e.preventDefault();
+                    lastElement.focus();
+                } else if (!e.shiftKey && document.activeElement === lastElement) {
+                    e.preventDefault();
+                    firstElement.focus();
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error setting up event listeners:', error);
     }
-    return labels;
 }
 
-function generateRandomData(count, min, max) {
-    const data = [];
-    for (let i = 0; i < count; i++) {
-        data.push(Math.floor(Math.random() * (max - min + 1)) + min);
+// Switch tabs with accessibility updates
+function switchTab(index) {
+    tabs.forEach((tab, i) => {
+        const isSelected = i === index;
+        tab.setAttribute('aria-selected', isSelected);
+        tab.setAttribute('tabindex', isSelected ? '0' : '-1');
+        tab.classList.toggle('active', isSelected);
+        
+        const tabContent = document.getElementById(tab.getAttribute('data-tab'));
+        if (tabContent) {
+            tabContent.hidden = !isSelected;
+            tabContent.classList.toggle('active', isSelected);
+            if (isSelected) {
+                tabContent.removeAttribute('hidden');
+                tabContent.setAttribute('tabindex', '0');
+                
+                // Initialize charts if switching to trends tab
+                if (tab.getAttribute('data-tab') === 'trends' && !trendChart) {
+                    initTrendCharts();
+                }
+                
+                // Generate insights if switching to insights tab
+                if (tab.getAttribute('data-tab') === 'insights') {
+                    generateInsightsContent();
+                }
+            } else {
+                tabContent.setAttribute('tabindex', '-1');
+            }
+        }
+    });
+}
+
+// Update tab accessibility attributes
+function updateTabAccessibility() {
+    tabs.forEach((tab, index) => {
+        const isSelected = tab.classList.contains('active');
+        tab.setAttribute('aria-selected', isSelected);
+        tab.setAttribute('tabindex', isSelected ? '0' : '-1');
+        
+        const tabContent = document.getElementById(tab.getAttribute('data-tab'));
+        if (tabContent) {
+            tabContent.hidden = !isSelected;
+            tabContent.setAttribute('tabindex', isSelected ? '0' : '-1');
+        }
+    });
+}
+
+// Show modal with accessibility
+function showDetailModal() {
+    try {
+        if (modalOverlay && modal) {
+            modalOverlay.style.display = 'block';
+            modal.style.display = 'block';
+            modalOverlay.style.opacity = '1';
+            
+            // Set focus to modal
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            
+            // Populate content
+            populateModalContent();
+            
+            // Focus first interactive element in modal
+            const closeButton = modal.querySelector('button');
+            if (closeButton) {
+                closeButton.focus();
+            }
+        }
+    } catch (error) {
+        console.error('Error showing modal:', error);
     }
-    return data;
+}
+
+// Hide modal with accessibility
+function hideDetailModal() {
+    try {
+        if (modalOverlay && modal) {
+            modalOverlay.style.opacity = '0';
+            modal.setAttribute('aria-hidden', 'true');
+            
+            setTimeout(() => {
+                modalOverlay.style.display = 'none';
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+                
+                // Return focus to the button that opened the modal
+                if (detailBtn) {
+                    detailBtn.focus();
+                }
+            }, 300);
+        }
+    } catch (error) {
+        console.error('Error hiding modal:', error);
+    }
+}
+
+// Populate modal content with analysis
+function populateModalContent() {
+    try {
+        if (!analysisGrid) return;
+        
+        if (historicalData.length === 0) {
+            analysisGrid.innerHTML = '<p>No historical data available</p>';
+            return;
+        }
+        
+        const stats = calculateStatistics(historicalData);
+        
+        analysisGrid.innerHTML = `
+            <div class="analysis-item">
+                <label><i class="fas fa-wave-square" aria-hidden="true"></i> Average SCL</label>
+                <div class="value" aria-live="polite">${stats.avgSCL.toFixed(2)} μS</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / GSR_THRESHOLDS.HIGH_STRESS) * 100)}%; 
+                        background: ${getColorForConductance(stats.avgSCL)};" 
+                        role="progressbar" aria-valuenow="${stats.avgSCL.toFixed(2)}" aria-valuemin="0" aria-valuemax="${GSR_THRESHOLDS.HIGH_STRESS}"></div>
+                </div>
+                <small>Normal range: 1-5 μS</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-bolt" aria-hidden="true"></i> Total SCR Events</label>
+                <div class="value" aria-live="polite">${historicalData.reduce((sum, item) => sum + (item.scrEvents || 0), 0)}</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / 5) * 100)}%; 
+                        background: ${getColorForConductance(stats.avgSCL)};" 
+                        role="progressbar" aria-valuenow="${stats.avgSCL.toFixed(2)}" aria-valuemin="0" aria-valuemax="5"></div>
+                </div>
+                <small>Normal: &lt;3 per minute</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-clock" aria-hidden="true"></i> Stress Duration</label>
+                <div class="value" aria-live="polite">${stats.stressDuration} mins</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(100, (stats.stressDuration / 180) * 100)}%; 
+                        background: ${getColorForDuration(stats.stressDuration)};" 
+                        role="progressbar" aria-valuenow="${stats.stressDuration}" aria-valuemin="0" aria-valuemax="180"></div>
+                </div>
+                <small>Today</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-chart-pie" aria-hidden="true"></i> Stress Distribution</label>
+                <div class="value" aria-live="polite">${stats.stressPercentage}% of time</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${stats.stressPercentage}%; 
+                        background: ${getColorForPercentage(stats.stressPercentage)};" 
+                        role="progressbar" aria-valuenow="${stats.stressPercentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small>Above threshold</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-heartbeat" aria-hidden="true"></i> Stress Variability</label>
+                <div class="value" aria-live="polite">${calculateVariability(historicalData).toFixed(2)}</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(100, (calculateVariability(historicalData) / 5) * 100)}%; 
+                        background: ${getColorForVariability(calculateVariability(historicalData))};" 
+                        role="progressbar" aria-valuenow="${calculateVariability(historicalData).toFixed(2)}" aria-valuemin="0" aria-valuemax="5"></div>
+                </div>
+                <small>Lower is better</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-undo" aria-hidden="true"></i> Recovery Efficiency</label>
+                <div class="value" aria-live="polite">${stats.recoveryRate.toFixed(1)}%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${stats.recoveryRate}%; 
+                        background: ${getColorForRecovery(stats.recoveryRate)};" 
+                        role="progressbar" aria-valuenow="${stats.recoveryRate.toFixed(1)}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small>Higher is better</small>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error populating modal content:', error);
+    }
 }
 
 // Load initial data from localStorage and fetch current data
@@ -1453,6 +1701,13 @@ function updateUI(data) {
         if (indicator) {
             indicator.style.left = `${Math.min(100, Math.max(0, stressLevel))}%`;
             indicator.style.borderColor = status.color;
+            
+            // Update ARIA attributes for stress meter
+            const stressMeter = document.querySelector('.stress-meter');
+            if (stressMeter) {
+                stressMeter.setAttribute('aria-valuenow', stressLevel.toFixed(0));
+                stressMeter.setAttribute('aria-valuetext', `${stressLevel.toFixed(0)}% stress level`);
+            }
         }
         
         // Update metrics
@@ -1552,7 +1807,7 @@ function updateTrendIndicators() {
     
     document.querySelectorAll('.trend').forEach(el => {
         el.className = 'trend ' + trendClass;
-        el.innerHTML = `<i class="fas ${trendIcon}"></i> ${trendText}`;
+        el.innerHTML = `<i class="fas ${trendIcon}" aria-hidden="true"></i> ${trendText}`;
     });
 }
 
@@ -1568,10 +1823,10 @@ function generateHourlyForecast() {
                 const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
                 
                 hours.push(`
-                    <div class="forecast-hour">
+                    <div class="forecast-hour" role="listitem">
                         <div class="forecast-time">${hour}:00</div>
-                        <div class="forecast-icon" style="background: ${status.color}">
-                            <i aria-hidden="true" class="fas ${getIconForStatus(status.text)}"></i>
+                        <div class="forecast-icon" style="background: ${status.color}" aria-hidden="true">
+                            <i class="fas ${getIconForStatus(status.text)}"></i>
                         </div>
                         <div class="forecast-value">${stressLevel.toFixed(0)}%</div>
                     </div>
@@ -1611,10 +1866,10 @@ function generateHourlyForecast() {
             const status = getStatusForConductance(avg);
             
             forecast.push(`
-                <div class="forecast-hour">
+                <div class="forecast-hour" role="listitem">
                     <div class="forecast-time">${hour}:00</div>
-                    <div class="forecast-icon" style="background: ${status.color}">
-                        <i aria-hidden="true" class="fas ${getIconForStatus(status.text)}"></i>
+                    <div class="forecast-icon" style="background: ${status.color}" aria-hidden="true">
+                        <i class="fas ${getIconForStatus(status.text)}"></i>
                     </div>
                     <div class="forecast-value">${stressLevel.toFixed(0)}%</div>
                 </div>
@@ -1642,10 +1897,10 @@ function generateWeeklyData() {
                 const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
                 
                 return `
-                    <div class="weekly-day ${isToday ? 'today' : ''}">
+                    <div class="weekly-day ${isToday ? 'today' : ''}" role="gridcell" aria-selected="${isToday}">
                         <div class="day">${day}</div>
-                        <div class="stress-icon" style="background: ${status.color}">
-                            <i aria-hidden="true" class="fas ${getIconForStatus(status.text)}"></i>
+                        <div class="stress-icon" style="background: ${status.color}" aria-hidden="true">
+                            <i class="fas ${getIconForStatus(status.text)}"></i>
                         </div>
                         <div class="stress-level">${stressLevel.toFixed(0)}%</div>
                         <div class="stress-range">${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%</div>
@@ -1684,10 +1939,10 @@ function generateWeeklyData() {
             const status = getStatusForConductance(avg);
             
             return `
-                <div class="weekly-day ${isToday ? 'today' : ''}">
+                <div class="weekly-day ${isToday ? 'today' : ''}" role="gridcell" aria-selected="${isToday}">
                     <div class="day">${day}</div>
-                    <div class="stress-icon" style="background: ${status.color}">
-                        <i aria-hidden="true" class="fas ${getIconForStatus(status.text)}"></i>
+                    <div class="stress-icon" style="background: ${status.color}" aria-hidden="true">
+                        <i class="fas ${getIconForStatus(status.text)}"></i>
                     </div>
                     <div class="stress-level">${stressLevel.toFixed(0)}%</div>
                     <div class="stress-range">${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%</div>
@@ -1746,8 +2001,8 @@ function generateRecommendations() {
         
         if (recommendationsContainer) {
             recommendationsContainer.innerHTML = recommendations.map(rec => `
-                <div class="recommendation-item">
-                    <div class="recommendation-icon" style="background: ${rec.color}">
+                <div class="recommendation-item" role="listitem">
+                    <div class="recommendation-icon" style="background: ${rec.color}" aria-hidden="true">
                         <i class="fas ${rec.icon}"></i>
                     </div>
                     <div class="recommendation-content">
@@ -1759,156 +2014,6 @@ function generateRecommendations() {
         }
     } catch (error) {
         console.error('Error generating recommendations:', error);
-    }
-}
-
-// Setup event listeners
-function setupEventListeners() {
-    try {
-        // Modal controls
-        if (detailBtn) detailBtn.addEventListener('click', showDetailModal);
-        if (closeModalBtn) closeModalBtn.addEventListener('click', hideDetailModal);
-        if (modalOverlay) modalOverlay.addEventListener('click', hideDetailModal);
-        
-        // Nav tabs
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-tab');
-                
-                // Update active tab
-                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Show corresponding content
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                    if (content.id === tabId) {
-                        content.classList.add('active');
-                        
-                        // Initialize charts if we're on the trends tab
-                        if (tabId === 'trends') {
-                            initTrendCharts();
-                        }
-                        
-                        // Generate insights if we're on the insights tab
-                        if (tabId === 'insights') {
-                            generateInsightsContent();
-                        }
-                    }
-                });
-            });
-        });
-        
-        // Keyboard accessibility
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.style.display === 'block') {
-                hideDetailModal();
-            }
-        });
-    } catch (error) {
-        console.error('Error setting up event listeners:', error);
-    }
-}
-
-// Show modal with detailed analysis
-function showDetailModal() {
-    try {
-        if (modalOverlay && modal) {
-            modalOverlay.style.display = 'block';
-            modal.style.display = 'block';
-            modalOverlay.style.opacity = '1';
-            populateModalContent();
-        }
-    } catch (error) {
-        console.error('Error showing modal:', error);
-    }
-}
-
-// Hide modal
-function hideDetailModal() {
-    try {
-        if (modalOverlay && modal) {
-            modalOverlay.style.opacity = '0';
-            setTimeout(() => {
-                modalOverlay.style.display = 'none';
-                modal.style.display = 'none';
-            }, 300);
-        }
-    } catch (error) {
-        console.error('Error hiding modal:', error);
-    }
-}
-
-// Populate modal content with analysis
-function populateModalContent() {
-    try {
-        if (!analysisGrid) return;
-        
-        if (historicalData.length === 0) {
-            analysisGrid.innerHTML = '<p>No historical data available</p>';
-            return;
-        }
-        
-        const stats = calculateStatistics(historicalData);
-        
-        analysisGrid.innerHTML = `
-            <div class="analysis-item">
-                <label><i aria-hidden="true" class="fas fa-wave-square"></i> Average SCL</label>
-                <div class="value">${stats.avgSCL.toFixed(2)} μS</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / GSR_THRESHOLDS.HIGH_STRESS) * 100)}%; 
-                        background: ${getColorForConductance(stats.avgSCL)};"></div>
-                </div>
-                <small>Normal range: 1-5 μS</small>
-            </div>
-            <div class="analysis-item">
-                <label><i aria-hidden="true" class="fas fa-bolt"></i> Total SCR Events</label>
-                <div class="value">${historicalData.reduce((sum, item) => sum + (item.scrEvents || 0), 0)}</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / 5) * 100)}%; 
-                        background: ${getColorForConductance(stats.avgSCL)};"></div>
-                </div>
-                <small>Normal: &lt;3 per minute</small>
-            </div>
-            <div class="analysis-item">
-                <label><i class="fas fa-clock"></i> Stress Duration</label>
-                <div class="value">${stats.stressDuration} mins</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${Math.min(100, (stats.stressDuration / 180) * 100)}%; 
-                        background: ${getColorForDuration(stats.stressDuration)};"></div>
-                </div>
-                <small>Today</small>
-            </div>
-            <div class="analysis-item">
-                <label><i class="fas fa-chart-pie"></i> Stress Distribution</label>
-                <div class="value">${stats.stressPercentage}% of time</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${stats.stressPercentage}%; 
-                        background: ${getColorForPercentage(stats.stressPercentage)};"></div>
-                </div>
-                <small>Above threshold</small>
-            </div>
-            <div class="analysis-item">
-                <label><i aria-hidden="true" class="fas fa-heartbeat"></i> Stress Variability</label>
-                <div class="value">${calculateVariability(historicalData).toFixed(2)}</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${Math.min(100, (calculateVariability(historicalData) / 5) * 100)}%; 
-                        background: ${getColorForVariability(calculateVariability(historicalData))};"></div>
-                </div>
-                <small>Lower is better</small>
-            </div>
-            <div class="analysis-item">
-                <label><i aria-hidden="true" class="fas fa-undo"></i> Recovery Efficiency</label>
-                <div class="value">${stats.recoveryRate.toFixed(1)}%</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${stats.recoveryRate}%; 
-                        background: ${getColorForRecovery(stats.recoveryRate)};"></div>
-                </div>
-                <small>Higher is better</small>
-            </div>
-        `;
-    } catch (error) {
-        console.error('Error populating modal content:', error);
     }
 }
 
@@ -1959,15 +2064,60 @@ function getColorForRecovery(recovery) {
     return 'var(--high-stress)';
 }
 
-// Start periodic data refresh
+// Start data refresh
 function startDataRefresh() {
-    setInterval(async () => {
+    const refreshInterval = setInterval(async () => {
         try {
             await fetchAndUpdateData();
+            
+            // Announce updates to screen readers
+            const currentStress = document.getElementById('current-stress');
+            const currentStatus = document.getElementById('current-status');
+            
+            if (currentStress && currentStatus) {
+                const stressLevel = currentStress.textContent;
+                const status = currentStatus.textContent;
+                
+                // Create live region for updates if it doesn't exist
+                let liveRegion = document.getElementById('stress-update-announcement');
+                if (!liveRegion) {
+                    liveRegion = document.createElement('div');
+                    liveRegion.id = 'stress-update-announcement';
+                    liveRegion.setAttribute('aria-live', 'polite');
+                    liveRegion.setAttribute('role', 'status');
+                    liveRegion.className = 'sr-only';
+                    document.body.appendChild(liveRegion);
+                }
+                
+                // Announce update
+                liveRegion.textContent = `Current stress level updated to ${stressLevel}, status: ${status}`;
+            }
         } catch (error) {
             console.error('Error during data refresh:', error);
+            clearInterval(refreshInterval);
         }
-    }, 5000); // Refresh every 5 seconds
+    }, 5000);
+}
+
+// Helper function to generate date labels
+function generateDateLabels(count) {
+    const labels = [];
+    const now = new Date();
+    for (let i = count - 1; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        labels.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
+    }
+    return labels;
+}
+
+// Helper function to generate random data
+function generateRandomData(count, min, max) {
+    const data = [];
+    for (let i = 0; i < count; i++) {
+        data.push(Math.floor(Math.random() * (max - min + 1)) + min);
+    }
+    return data;
 }
 
 // Fallback to sample data if needed
