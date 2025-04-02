@@ -14,7 +14,6 @@ const EXCLUDE_PATTERNS = [
   /\.cff$/,
   /LICENSE$/,
   /generate-sw\.js$/,
-  /sw\.js$/,
   /package(-lock)?\.json$/,
   /node_modules\//
 ];
