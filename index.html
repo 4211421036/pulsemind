@@ -740,6 +740,35 @@
         outline: 3px solid CanvasText;
     }
 }
+        .stress-level[role="meter"] {
+    font-weight: bold;
+    margin: 5px 0;
+    color: #333;
+}
+
+.stress-range[role="tooltip"] {
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Optional: Display tooltip only on hover */
+/*
+.weekly-day:hover .stress-range[role="tooltip"] {
+    display: block;
+}
+
+.stress-range[role="tooltip"] {
+    display: none;
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 3px;
+    z-index: 100;
+}
 </style>
     <script src="https://www.googletagmanager.com/gtag/js?id=G-10CPK9SS6N" async></script><script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-10CPK9SS6N")</script>
     <meta name="google-site-verification" content="OYdjPwgIjGMAbQd3CGwM_l20jLNRRp84mEl3kw06DMg" />
@@ -1279,7 +1308,7 @@ function generateInsightsContent() {
                     </div>
                     <div class="insight-content">
                         <h4 id="trigger1">Work Meetings</h4>
-                        <p aria-labelledby="trigger1">75% correlation with stress spikes</p>
+                        <p role=text aria-labelledby="trigger1">75% correlation with stress spikes</p>
                     </div>
                 </div>
                 <div class="insight-item" role="listitem">
@@ -1288,7 +1317,7 @@ function generateInsightsContent() {
                     </div>
                     <div class="insight-content">
                         <h4 id="trigger2">Screen Time</h4>
-                        <p aria-labelledby="trigger2">60% correlation with elevated stress</p>
+                        <p role=text aria-labelledby="trigger2">60% correlation with elevated stress</p>
                     </div>
                 </div>
             `;
@@ -1304,7 +1333,7 @@ function generateInsightsContent() {
                     </div>
                     <div class="insight-content">
                         <h4 id="insight1">Improving Trend</h4>
-                        <p aria-labelledby="insight1">Your average stress has decreased by 15% this week</p>
+                        <p role=text aria-labelledby="insight1">Your average stress has decreased by 15% this week</p>
                     </div>
                 </div>
                 <div class="insight-item negative" role="listitem">
@@ -1313,7 +1342,7 @@ function generateInsightsContent() {
                     </div>
                     <div class="insight-content">
                         <h4 id="insight2">Midweek Spike</h4>
-                        <p aria-labelledby="insight2">Wednesdays are consistently your most stressful day</p>
+                        <p role=text aria-labelledby="insight2">Wednesdays are consistently your most stressful day</p>
                     </div>
                 </div>
             `;
@@ -1352,7 +1381,7 @@ function generateInsightsContent() {
                     </div>
                     <div class="achievement-content">
                         <h4 id="achieve1">7-Day Streak</h4>
-                        <p aria-labelledby="achieve1">You've logged data for 7 consecutive days</p>
+                        <p role=text aria-labelledby="achieve1">You've logged data for 7 consecutive days</p>
                     </div>
                 </div>
             `;
@@ -1368,7 +1397,7 @@ function generateInsightsContent() {
                     </div>
                     <div class="alert-content">
                         <h4 id="alert1">Upcoming Stressful Period</h4>
-                        <p aria-labelledby="alert1">Tomorrow between 2PM-4PM is typically stressful for you</p>
+                        <p role=text aria-labelledby="alert1">Tomorrow between 2PM-4PM is typically stressful for you</p>
                     </div>
                 </div>
             `;
@@ -1968,16 +1997,34 @@ function generateWeeklyData() {
                 const stressLevel = 50 + (Math.sin(index) * 20);
                 const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
                 
-                // Use data-today instead of aria-selected
+                // Generate unique IDs for each day's elements
+                const dayId = `day-${index}`;
+                const meterId = `stress-meter-${dayId}`;
+                const tooltipId = `stress-range-${dayId}`;
+                
                 weekDataHTML += `
                     <div class="weekly-day ${isToday ? 'today' : ''}" role="cell" data-today="${isToday}"
-                         aria-label="${day} stress level ${stressLevel.toFixed(0)}%">
+                         aria-label="${day} stress level">
                         <div class="day">${day}</div>
                         <div class="stress-icon" style="background: ${status.color}" aria-hidden="true">
                             <i class="fas ${getIconForStatus(status.text)}"></i>
                         </div>
-                        <div class="stress-level">${stressLevel.toFixed(0)}%</div>
-                        <div class="stress-range">${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%</div>
+                        <div role="meter" 
+                             id="${meterId}"
+                             aria-label="${day} stress level"
+                             aria-valuenow="${stressLevel.toFixed(0)}"
+                             aria-valuemin="0"
+                             aria-valuemax="100"
+                             aria-valuetext="${stressLevel.toFixed(0)}% stress level"
+                             class="stress-level">
+                            ${stressLevel.toFixed(0)}%
+                        </div>
+                        <div role="tooltip" 
+                             id="${tooltipId}"
+                             aria-label="${day} stress range"
+                             class="stress-range">
+                            ${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%
+                        </div>
                     </div>
                 `;
             });
@@ -2018,15 +2065,34 @@ function generateWeeklyData() {
             const stressLevel = calculateStressLevel(avg + (Math.sin(index) * 1.5));
             const status = getStatusForConductance(avg);
             
+            // Generate unique IDs for each day's elements
+            const dayId = `day-${index}`;
+            const meterId = `stress-meter-${dayId}`;
+            const tooltipId = `stress-range-${dayId}`;
+            
             weekDataHTML += `
                 <div class="weekly-day ${isToday ? 'today' : ''}" role="cell" data-today="${isToday}"
-                     aria-label="${day} stress level ${stressLevel.toFixed(0)}%">
-                    <div class="day">${day}</div>
-                    <div class="stress-icon" style="background: ${status.color}" aria-hidden="true">
-                        <i class="fas ${getIconForStatus(status.text)}"></i>
-                    </div>
-                    <div class="stress-level">${stressLevel.toFixed(0)}%</div>
-                    <div class="stress-range">${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%</div>
+                     aria-label="${day} stress level">
+                        <div class="day">${day}</div>
+                        <div class="stress-icon" style="background: ${status.color}" aria-hidden="true">
+                            <i class="fas ${getIconForStatus(status.text)}"></i>
+                        </div>
+                        <div role="meter" 
+                             id="${meterId}"
+                             aria-label="${day} stress level"
+                             aria-valuenow="${stressLevel.toFixed(0)}"
+                             aria-valuemin="0"
+                             aria-valuemax="100"
+                             aria-valuetext="${stressLevel.toFixed(0)}% stress level"
+                             class="stress-level">
+                            ${stressLevel.toFixed(0)}%
+                        </div>
+                        <div role="tooltip" 
+                             id="${tooltipId}"
+                             aria-label="${day} stress range"
+                             class="stress-range">
+                            ${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%
+                        </div>
                 </div>
             `;
         });
