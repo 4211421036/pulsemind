@@ -977,7 +977,6 @@ function createTranslationButton() {
   const translationButton = document.createElement('button');
   translationButton.id = 'translate-btn';
   translationButton.className = 'translate-btn';
-  translationButton.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> English';
   translationButton.setAttribute('aria-label', 'Toggle between Indonesian and English');
   translationButton.title = 'Press T to toggle language (T)';
   
@@ -1054,20 +1053,41 @@ const translations = {
   }
 };
 
+// Store original text values for proper looping translation
+const originalTexts = new Map();
+
 // Function to translate the UI
 function translateUI(language) {
   const dict = translations[language];
   const elements = document.querySelectorAll('h2, h3, button, span, div.status, label, div.trend');
   
   elements.forEach(element => {
-    const originalText = element.textContent.trim();
+    // Skip the translation button itself
+    if (element.id === 'translate-btn') return;
+    
+    // Store the original text if we haven't already
+    if (!originalTexts.has(element)) {
+      originalTexts.set(element, element.textContent.trim());
+    }
+    
+    const originalText = originalTexts.get(element);
+    
     if (dict[originalText]) {
       element.textContent = dict[originalText];
     }
     
     // For special cases like buttons with icons
     if (element.tagName === 'BUTTON' && element.querySelector('.fas')) {
-      const buttonText = element.textContent.trim();
+      if (!originalTexts.has(element)) {
+        // Get only the text part
+        const buttonText = Array.from(element.childNodes)
+                               .filter(node => node.nodeType === Node.TEXT_NODE)
+                               .map(node => node.nodeValue.trim())
+                               .join(' ').trim();
+        originalTexts.set(element, buttonText);
+      }
+      
+      const buttonText = originalTexts.get(element);
       if (dict[buttonText]) {
         const icon = element.querySelector('.fas').outerHTML;
         element.innerHTML = icon + ' ' + dict[buttonText];
@@ -1075,9 +1095,17 @@ function translateUI(language) {
     }
   });
   
-  // Update the button text
+  // Update the button text and language state
+  updateTranslateButton(language);
+  
+  // Save language preference to localStorage
+  localStorage.setItem('preferredLanguage', language);
+}
+
+// Update the translate button based on current language
+function updateTranslateButton(currentLanguage) {
   const translateBtn = document.getElementById('translate-btn');
-  if (language === 'english') {
+  if (currentLanguage === 'english') {
     translateBtn.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> Bahasa Indonesia';
   } else {
     translateBtn.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> English';
@@ -1086,8 +1114,18 @@ function translateUI(language) {
 
 // Initialize the translation functionality
 function initTranslation() {
-  let currentLanguage = 'english';
+  // Get saved language preference or default to English
+  let currentLanguage = localStorage.getItem('preferredLanguage') || 'english';
+  
   const translateBtn = createTranslationButton();
+  
+  // Set initial button text based on saved preference
+  updateTranslateButton(currentLanguage);
+  
+  // Apply saved language preference if not English
+  if (currentLanguage === 'indonesian') {
+    translateUI(currentLanguage);
+  }
   
   // Toggle language on button click
   translateBtn.addEventListener('click', () => {
