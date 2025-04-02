@@ -1896,7 +1896,7 @@ function generateHourlyForecast() {
                         <div class="forecast-icon" style="background: ${status.color}" aria-hidden="true">
                             <i class="fas ${getIconForStatus(status.text)}"></i>
                         </div>
-                        <div class="forecast-value">${stressLevel.toFixed(0)}%</div>
+                        <div role="text" class="forecast-value">${stressLevel.toFixed(0)}%</div>
                     </div>
                 `);
             }
