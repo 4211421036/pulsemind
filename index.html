@@ -704,191 +704,202 @@
 </head>
 <body>
     <noscript><iframe height=0 src="https://www.googletagmanager.com/ns.html?id=GTM-NN8S46CR" style=display:none;visibility:hidden width=0></iframe></noscript>
-    <div class="dashboard" role="main" aria-label="Mental Health Dashboard">
-    <div class="nav-tabs" role="tablist">
-        <div class="nav-tab active" role="tab" id="tab-overview" aria-selected="true" aria-controls="overview" tabindex="0">Overview</div>
-        <div class="nav-tab" role="tab" id="tab-trends" aria-selected="false" aria-controls="trends" tabindex="0">Trends</div>
-        <div class="nav-tab" role="tab" id="tab-insights" aria-selected="false" aria-controls="insights" tabindex="0">Insights</div>
-    </div>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <div class="dashboard" role="main" id="main-content">
+        <nav aria-label="Main navigation">
+            <div class="nav-tabs" role="tablist">
+                <button class="nav-tab active" role="tab" aria-selected="true" aria-controls="overview" id="tab-overview" data-tab="overview" accesskey="1">
+                    <span class="fas fa-chart-pie" aria-hidden="true"></span> Overview
+                </button>
+                <button class="nav-tab" role="tab" aria-selected="false" aria-controls="trends" id="tab-trends" data-tab="trends" accesskey="2" tabindex="-1">
+                    <span class="fas fa-chart-line" aria-hidden="true"></span> Trends
+                </button>
+                <button class="nav-tab" role="tab" aria-selected="false" aria-controls="insights" id="tab-insights" data-tab="insights" accesskey="3" tabindex="-1">
+                    <span class="fas fa-lightbulb" aria-hidden="true"></span> Insights
+                </button>
+            </div>
+        </nav>
 
-    <!-- Overview Tab (existing content) -->
-    <div class="tab-content active" id="overview" role="tabpanel" aria-labelledby="tab-overview">
-        <div class="dashboard-grid">
-            <div class="main-column">
-                <div class="card main-card">
-                    <div class="header">
-                        <h2><i class="fas fa-brain" aria-hidden="true"></i> Real-time Mental State</h2>
-                        <div class="real-time">
-                            <div id="current-stress" aria-live="polite">0%</div>
-                            <div class="status" id="current-status" aria-live="polite">Calibrating...</div>
+        <!-- Overview Tab -->
+        <section id="overview" class="tab-content active" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
+            <div class="dashboard-grid">
+                <div class="main-column">
+                    <div class="card main-card">
+                        <div class="header">
+                            <h2><span class="fas fa-brain" aria-hidden="true"></span> Real-time Mental State</h2>
+                            <div class="real-time">
+                                <div id="current-stress" aria-live="polite">0%</div>
+                                <div class="status" id="current-status" aria-live="polite">Calibrating...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stress-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0% stress level">
+                            <div class="stress-indicator" id="stress-indicator"></div>
+                        </div>
+                        <div class="stress-labels">
+                            <span>Relaxed</span>
+                            <span>Normal</span>
+                            <span>Stressed</span>
+                            <span>High Stress</span>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <canvas id="gsrChart" aria-label="Skin Conductance Over Time"></canvas>
+                        </div>
+
+                        <h3><span class="fas fa-clock" aria-hidden="true"></span> Today's Forecast</h3>
+                        <div class="hourly-forecast" id="hourly-forecast" aria-live="polite">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="card recommendations-card">
+                        <h3><span class="fas fa-lightbulb" aria-hidden="true"></span> Recommendations</h3>
+                        <div class="recommendations" id="recommendations" role="list">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-column">
+                    <div class="card metrics-card">
+                        <h3><span class="fas fa-chart-line" aria-hidden="true"></span> Key Metrics</h3>
+                        <div class="metric-grid">
+                            <div class="metric-item">
+                                <label for="avg-stress">Avg. Stress (24h)</label>
+                                <div class="value" id="avg-stress" aria-live="polite">0%</div>
+                                <div class="trend" id="avg-trend">
+                                    <span class="fas fa-minus" aria-hidden="true"></span> Stable
+                                </div>
+                            </div>
+                            <div class="metric-item">
+                                <label for="peak-stress">Peak Today</label>
+                                <div class="value" id="peak-stress" aria-live="polite">0μS</div>
+                                <div class="trend" id="peak-trend">
+                                    <span class="fas fa-minus" aria-hidden="true"></span> Stable
+                                </div>
+                            </div>
+                            <div class="metric-item">
+                                <label for="stress-duration">Stress Duration</label>
+                                <div class="value" id="stress-duration" aria-live="polite">0 min</div>
+                                <div class="trend" id="duration-trend">
+                                    <span class="fas fa-minus" aria-hidden="true"></span> Stable
+                                </div>
+                            </div>
+                            <div class="metric-item">
+                                <label for="recovery-rate">Recovery Rate</label>
+                                <div class="value" id="recovery-rate" aria-live="polite">0%</div>
+                                <div class="trend" id="recovery-trend">
+                                    <span class="fas fa-minus" aria-hidden="true"></span> Stable
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-action" id="detail-btn" aria-label="View detailed mental health analysis">
+                            View Full Analysis
+                        </button>
+                    </div>
+
+                    <div class="card weekly-card">
+                        <h3><span class="fas fa-calendar-week" aria-hidden="true"></span> Weekly Overview</h3>
+                        <div class="weekly-grid" id="weekly-grid" role="grid">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trends Tab -->
+        <section id="trends" class="tab-content" role="tabpanel" aria-labelledby="tab-trends" tabindex="0" hidden>
+            <div class="dashboard-grid">
+                <div class="main-column">
+                    <div class="card">
+                        <h3><span class="fas fa-chart-line" aria-hidden="true"></span> Long-term Stress Trends</h3>
+                        <div class="chart-container">
+                            <canvas id="trendChart" aria-label="7-Day Stress Trend"></canvas>
                         </div>
                     </div>
                     
-                    <div class="stress-meter" role="meter" aria-label="Stress level meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                        <div class="stress-indicator" id="stress-indicator"></div>
+                    <div class="card">
+                        <h3><span class="fas fa-calendar-alt" aria-hidden="true"></span> Weekly Stress Patterns</h3>
+                        <div class="chart-container">
+                            <canvas id="weeklyPatternChart" aria-label="Weekly Stress Patterns"></canvas>
+                        </div>
                     </div>
-                    <div class="stress-labels">
-                        <span>Relaxed</span>
-                        <span>Normal</span>
-                        <span>Stressed</span>
-                        <span>High Stress</span>
+                </div>
+                
+                <div class="side-column">
+                    <div class="card">
+                        <h3><span class="fas fa-clock" aria-hidden="true"></span> Time-of-Day Analysis</h3>
+                        <div class="chart-container">
+                            <canvas id="timeOfDayChart" aria-label="Average Stress by Time of Day"></canvas>
+                        </div>
                     </div>
                     
-                    <div class="chart-container">
-                        <canvas id="gsrChart" aria-label="GSR Chart" role="img"></canvas>
-                    </div>
-
-                    <h3><i class="fas fa-clock" aria-hidden="true"></i> Today's Forecast</h3>
-                    <div class="hourly-forecast" id="hourly-forecast" aria-label="Hourly stress forecast">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-
-                <div class="card recommendations-card">
-                    <h3><i class="fas fa-lightbulb" aria-hidden="true"></i> Recommendations</h3>
-                    <div class="recommendations" id="recommendations" aria-live="polite">
-                        <!-- Will be populated by JavaScript -->
+                    <div class="card">
+                        <h3><span class="fas fa-chart-bar" aria-hidden="true"></span> Stress Triggers</h3>
+                        <div class="stress-triggers" id="stress-triggers" role="list">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="side-column">
-                <div class="card metrics-card">
-                    <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Key Metrics</h3>
-                    <div class="metric-grid">
-                        <div class="metric-item">
-                            <label id="label-avg-stress">Avg. Stress (24h)</label>
-                            <div class="value" id="avg-stress" aria-labelledby="label-avg-stress">0%</div>
-                            <div class="trend" id="avg-trend" aria-live="polite">
-                                <i class="fas fa-minus" aria-hidden="true"></i> Stable
-                            </div>
-                        </div>
-                        <div class="metric-item">
-                            <label id="label-peak-stress">Peak Today</label>
-                            <div class="value" id="peak-stress" aria-labelledby="label-peak-stress">0μS</div>
-                            <div class="trend" id="peak-trend" aria-live="polite">
-                                <i class="fas fa-minus" aria-hidden="true"></i> Stable
-                            </div>
-                        </div>
-                        <div class="metric-item">
-                            <label id="label-stress-duration">Stress Duration</label>
-                            <div class="value" id="stress-duration" aria-labelledby="label-stress-duration">0 min</div>
-                            <div class="trend" id="duration-trend" aria-live="polite">
-                                <i class="fas fa-minus" aria-hidden="true"></i> Stable
-                            </div>
-                        </div>
-                        <div class="metric-item">
-                            <label id="label-recovery-rate">Recovery Rate</label>
-                            <div class="value" id="recovery-rate" aria-labelledby="label-recovery-rate">0%</div>
-                            <div class="trend" id="recovery-trend" aria-live="polite">
-                                <i class="fas fa-minus" aria-hidden="true"></i> Stable
-                            </div>
+        <!-- Insights Tab -->
+        <section id="insights" class="tab-content" role="tabpanel" aria-labelledby="tab-insights" tabindex="0" hidden>
+            <div class="dashboard-grid">
+                <div class="main-column">
+                    <div class="card">
+                        <h3><span class="fas fa-lightbulb" aria-hidden="true"></span> Key Insights</h3>
+                        <div class="insights-container" id="key-insights" role="list">
+                            <!-- Will be populated by JavaScript -->
                         </div>
                     </div>
-                    <button class="btn-action" id="detail-btn" aria-expanded="false" aria-controls="detail-modal">View Full Analysis</button>
-                </div>
-
-                <div class="card weekly-card">
-                    <h3><i class="fas fa-calendar-week" aria-hidden="true"></i> Weekly Overview</h3>
-                    <div class="weekly-grid" id="weekly-grid" aria-label="Weekly stress overview">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Trends Tab (new content) -->
-    <div class="tab-content" id="trends" role="tabpanel" aria-labelledby="tab-trends" hidden>
-        <div class="dashboard-grid">
-            <div class="main-column">
-                <div class="card">
-                    <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Long-term Stress Trends</h3>
-                    <div class="chart-container">
-                        <canvas id="trendChart" aria-label="Long-term stress trends chart" role="img"></canvas>
+                    
+                    <div class="card">
+                        <h3><span class="fas fa-project-diagram" aria-hidden="true"></span> Stress Correlations</h3>
+                        <div class="correlation-container" id="correlation-insights" role="region">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
                 
-                <div class="card">
-                    <h3><i class="fas fa-calendar-alt" aria-hidden="true"></i> Monthly Stress Patterns</h3>
-                    <div class="chart-container">
-                        <canvas id="monthlyChart" aria-label="Monthly stress patterns chart" role="img"></canvas>
+                <div class="side-column">
+                    <div class="card">
+                        <h3><span class="fas fa-trophy" aria-hidden="true"></span> Progress & Achievements</h3>
+                        <div class="achievements-container" id="achievements" role="list">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><span class="fas fa-bell" aria-hidden="true"></span> Personalized Alerts</h3>
+                        <div class="alerts-container" id="personalized-alerts" role="alert">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="side-column">
-                <div class="card">
-                    <h3><i class="fas fa-clock" aria-hidden="true"></i> Time-of-Day Analysis</h3>
-                    <div class="chart-container">
-                        <canvas id="timeOfDayChart" aria-label="Time-of-day stress analysis chart" role="img"></canvas>
-                    </div>
-                    <div class="time-of-day-insights" id="time-of-day-insights" aria-live="polite">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <h3><i class="fas fa-chart-bar" aria-hidden="true"></i> Stress Triggers</h3>
-                    <div class="stress-triggers" id="stress-triggers" aria-live="polite">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-        </div>
+        </section>
     </div>
 
-    <!-- Insights Tab (new content) -->
-    <div class="tab-content" id="insights" role="tabpanel" aria-labelledby="tab-insights" hidden>
-        <div class="dashboard-grid">
-            <div class="main-column">
-                <div class="card">
-                    <h3><i class="fas fa-lightbulb" aria-hidden="true"></i> Key Insights</h3>
-                    <div class="insights-container" id="key-insights" aria-live="polite">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <h3><i class="fas fa-project-diagram" aria-hidden="true"></i> Stress Correlations</h3>
-                    <div class="chart-container">
-                        <canvas id="correlationChart" aria-label="Stress correlations chart" role="img"></canvas>
-                    </div>
-                </div>
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal-overlay" role="presentation"></div>
+    <div class="modal" id="detail-modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title"><span class="fas fa-chart-bar" aria-hidden="true"></span> Mental Health Analysis</h3>
+                <button class="close-modal" id="close-modal" aria-label="Close modal">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            
-            <div class="side-column">
-                <div class="card">
-                    <h3><i class="fas fa-trophy" aria-hidden="true"></i> Progress & Achievements</h3>
-                    <div class="achievements-container" id="achievements" aria-live="polite">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <h3><i class="fas fa-bell" aria-hidden="true"></i> Personalized Alerts</h3>
-                    <div class="alerts-container" id="personalized-alerts" aria-live="polite">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
+            <div class="analysis-grid" id="analysis-grid" role="region">
+                <!-- Will be populated by JavaScript -->
             </div>
         </div>
     </div>
-</div>
-
-<!-- Modal -->
-<div class="modal-overlay" id="modal-overlay" aria-hidden="true"></div>
-<div class="modal" id="detail-modal" role="dialog" aria-labelledby="modal-title" aria-modal="true" hidden>
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modal-title"><i class="fas fa-chart-bar" aria-hidden="true"></i> Mental Health Analysis</h3>
-            <button class="close-modal" id="close-modal" aria-label="Close modal">&times;</button>
-        </div>
-        <div class="analysis-grid" id="analysis-grid">
-            <!-- Will be populated by JavaScript -->
-        </div>
-    </div>
-</div>
 
 <script>
 // DOM Elements
