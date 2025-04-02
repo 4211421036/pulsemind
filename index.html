@@ -703,24 +703,42 @@
     justify-content: space-between;
     width: 100%;
 }
-        .skip-link {
-    position: absolute;
-    top: -40px;
-    left: 0;
-    background: #4285f4;
-    color: white;
-    padding: 8px;
-    z-index: 100;
-    transition: top 0.3s ease;
-    border-radius: 0 0 4px 0;
-    text-decoration: none;
-    font-weight: bold;
+
+        .skip-link-wrapper {
+    position: relative;
+    z-index: 1000;
 }
 
+.skip-link {
+    background: #4285f4;
+    color: white;
+    font-weight: 700;
+    left: 50%;
+    padding: 8px 16px;
+    position: absolute;
+    transform: translateX(-50%);
+    text-decoration: none;
+    transition: top 0.3s;
+    border-radius: 0 0 4px 4px;
+}
+
+/* Hide the skip link by default */
+.skip-link {
+    top: -130px;
+}
+
+/* Show the skip link when it receives focus */
 .skip-link:focus {
     top: 0;
     outline: 2px solid #4285f4;
     outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+    .skip-link:focus {
+        outline: 3px solid CanvasText;
+    }
 }
 </style>
     <script src="https://www.googletagmanager.com/gtag/js?id=G-10CPK9SS6N" async></script><script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-10CPK9SS6N")</script>
@@ -728,7 +746,9 @@
 </head>
 <body>
     <noscript><iframe height=0 src="https://www.googletagmanager.com/ns.html?id=GTM-NN8S46CR" style=display:none;visibility:hidden width=0></iframe></noscript>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div class="skip-link-wrapper">
+        <a href="#main-content" class="skip-link">Skip to main content</a>
+    </div>
     
     <div class="dashboard" role="main" id="main-content">
         <nav aria-label="Main navigation">
@@ -926,6 +946,29 @@
         </div>
     </div>
 
+     <script>
+        // Add smooth scrolling for skip links
+        document.querySelectorAll('.skip-link').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+
+                if (targetElement) {
+                    targetElement.setAttribute('tabindex', '-1');
+                    targetElement.focus();
+
+                    // Remove tabindex after focus
+                    targetElement.addEventListener('blur', function () {
+                        this.removeAttribute('tabindex');
+                    }, { once: true });
+
+                    // Smooth scroll to the element
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
 <script>
 // DOM Elements with null checks
 const modal = document.getElementById('detail-modal');
