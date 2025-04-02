@@ -1032,33 +1032,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-    // This JavaScript is optional but enhances the skip link functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Get the skip link
-    const skipLink = document.querySelector('.skip-link');
-    
-    if (skipLink) {
-        // Add click handler to set focus to main content
-        skipLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Get the target element
-            const targetId = this.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            
-            if (targetElement) {
-                // Set focus to the target element
-                targetElement.setAttribute('tabindex', '-1');
-                targetElement.focus();
-                
-                // Remove tabindex after focus (optional)
-                setTimeout(function() {
-                    targetElement.removeAttribute('tabindex');
-                }, 1000);
-            }
-        });
-    }
-});
 // Initialize all charts with accessibility features
 function initCharts() {
     try {
