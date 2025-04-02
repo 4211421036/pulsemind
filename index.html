@@ -902,10 +902,10 @@ const weeklyGrid = document.getElementById('weekly-grid');
 const recommendationsContainer = document.getElementById('recommendations');
 
 // Chart instances
-let chart; // Original GSR chart
-let trendChart; // Long-term trend chart
-let weeklyPatternChart; // Weekly pattern chart
-let timeOfDayChart; // Time of day chart
+let chart = null; // Original GSR chart
+let trendChart = null; // Long-term trend chart
+let weeklyPatternChart = null; // Weekly pattern chart
+let timeOfDayChart = null; // Time of day chart
 
 // Data Configuration
 const DATA_URL = 'https://4211421036.github.io/pulsemind/data/gsr.json';
@@ -926,34 +926,52 @@ let lastData = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
-    initCharts();
-    setupEventListeners();
-    await loadInitialData();
-    generateWeeklyData();
-    generateHourlyForecast();
-    generateRecommendations();
-    startDataRefresh();
-    
-    // Generate insights if we're already on the insights tab
-    if (document.querySelector('.nav-tab.active').getAttribute('data-tab') === 'insights') {
-        generateInsightsContent();
+    try {
+        setupEventListeners();
+        await loadInitialData();
+        initCharts(); // Initialize charts after data is loaded
+        generateWeeklyData();
+        generateHourlyForecast();
+        generateRecommendations();
+        startDataRefresh();
+        
+        // Generate insights if we're already on the insights tab
+        if (document.querySelector('.nav-tab.active')?.getAttribute('data-tab') === 'insights') {
+            generateInsightsContent();
+        }
+    } catch (error) {
+        console.error('Initialization error:', error);
+        loadSampleData(); // Fallback to sample data
     }
 });
 
 // Initialize all charts
 function initCharts() {
-    initGSRChart();
-    
-    // Initialize trend charts only if elements exist
-    if (document.getElementById('trendChart')) {
-        initTrendCharts();
+    try {
+        // Initialize main GSR chart if element exists
+        const gsrChartEl = document.getElementById('gsrChart');
+        if (gsrChartEl) {
+            initGSRChart();
+        }
+
+        // Initialize trend charts only when on trends tab and elements exist
+        const activeTab = document.querySelector('.nav-tab.active')?.getAttribute('data-tab');
+        if (activeTab === 'trends') {
+            initTrendCharts();
+        }
+    } catch (error) {
+        console.error('Chart initialization error:', error);
     }
 }
 
 // Initialize the main GSR chart
 function initGSRChart() {
-    const ctx = document.getElementById('gsrChart').getContext('2d');
-    
+    const ctx = document.getElementById('gsrChart')?.getContext('2d');
+    if (!ctx) {
+        console.warn('GSR chart canvas not found');
+        return;
+    }
+
     chart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1056,63 +1074,78 @@ function initGSRChart() {
             }
         }
     });
+
+    // Update chart with existing data if available
+    if (historicalData.length > 0) {
+        updateChartWithHistory();
+    }
 }
 
-// Initialize trend charts
+// Initialize trend charts only when needed
 function initTrendCharts() {
-    // Long-term trend chart
-    const trendCtx = document.getElementById('trendChart').getContext('2d');
-    trendChart = new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: generateDateLabels(7), // Last 7 days
-            datasets: [{
-                label: 'Stress Level',
-                data: generateRandomData(7, 30, 70),
-                borderColor: '#4A90E2',
-                borderWidth: 2,
-                fill: false,
-                tension: 0.3
-            }]
-        },
-        options: getTrendChartOptions('7-Day Stress Trend')
-    });
-    
-    // Weekly pattern chart
-    const weeklyCtx = document.getElementById('weeklyPatternChart').getContext('2d');
-    weeklyPatternChart = new Chart(weeklyCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Average Stress',
-                data: generateRandomData(7, 40, 80),
-                backgroundColor: '#4A90E2',
-                borderColor: '#4A90E2',
-                borderWidth: 1
-            }]
-        },
-        options: getTrendChartOptions('Weekly Stress Patterns')
-    });
-    
-    // Time of day chart
-    const timeCtx = document.getElementById('timeOfDayChart').getContext('2d');
-    timeOfDayChart = new Chart(timeCtx, {
-        type: 'line',
-        data: {
-            labels: ['6AM', '9AM', '12PM', '3PM', '6PM', '9PM', '12AM'],
-            datasets: [{
-                label: 'Average Stress',
-                data: generateRandomData(7, 20, 90),
-                borderColor: '#4A90E2',
-                borderWidth: 2,
-                fill: true,
-                backgroundColor: 'rgba(74, 144, 226, 0.1)',
-                tension: 0.3
-            }]
-        },
-        options: getTrendChartOptions('Average Stress by Time of Day')
-    });
+    try {
+        // Long-term trend chart
+        const trendCtx = document.getElementById('trendChart')?.getContext('2d');
+        if (trendCtx) {
+            trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: generateDateLabels(7), // Last 7 days
+                    datasets: [{
+                        label: 'Stress Level',
+                        data: generateRandomData(7, 30, 70),
+                        borderColor: '#4A90E2',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3
+                    }]
+                },
+                options: getTrendChartOptions('7-Day Stress Trend')
+            });
+        }
+
+        // Weekly pattern chart
+        const weeklyCtx = document.getElementById('weeklyPatternChart')?.getContext('2d');
+        if (weeklyCtx) {
+            weeklyPatternChart = new Chart(weeklyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Average Stress',
+                        data: generateRandomData(7, 40, 80),
+                        backgroundColor: '#4A90E2',
+                        borderColor: '#4A90E2',
+                        borderWidth: 1
+                    }]
+                },
+                options: getTrendChartOptions('Weekly Stress Patterns')
+            });
+        }
+
+        // Time of day chart
+        const timeCtx = document.getElementById('timeOfDayChart')?.getContext('2d');
+        if (timeCtx) {
+            timeOfDayChart = new Chart(timeCtx, {
+                type: 'line',
+                data: {
+                    labels: ['6AM', '9AM', '12PM', '3PM', '6PM', '9PM', '12AM'],
+                    datasets: [{
+                        label: 'Average Stress',
+                        data: generateRandomData(7, 20, 90),
+                        borderColor: '#4A90E2',
+                        borderWidth: 2,
+                        fill: true,
+                        backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                        tension: 0.3
+                    }]
+                },
+                options: getTrendChartOptions('Average Stress by Time of Day')
+            });
+        }
+    } catch (error) {
+        console.error('Error initializing trend charts:', error);
+    }
 }
 
 // Common options for trend charts
@@ -1149,93 +1182,112 @@ function getTrendChartOptions(title) {
 
 // Generate insights content
 function generateInsightsContent() {
-    // Stress triggers
-    document.getElementById('stress-triggers').innerHTML = `
-        <div class="insight-item">
-            <div class="insight-icon" style="background: var(--high-stress)">
-                <i class="fas fa-briefcase"></i>
-            </div>
-            <div class="insight-content">
-                <h4>Work Meetings</h4>
-                <p>75% correlation with stress spikes</p>
-            </div>
-        </div>
-        <div class="insight-item">
-            <div class="insight-icon" style="background: var(--stressed)">
-                <i class="fas fa-mobile-alt"></i>
-            </div>
-            <div class="insight-content">
-                <h4>Screen Time</h4>
-                <p>60% correlation with elevated stress</p>
-            </div>
-        </div>
-    `;
-    
-    // Key insights
-    document.getElementById('key-insights').innerHTML = `
-        <div class="insight-item positive">
-            <div class="insight-icon">
-                <i class="fas fa-arrow-down"></i>
-            </div>
-            <div class="insight-content">
-                <h4>Improving Trend</h4>
-                <p>Your average stress has decreased by 15% this week</p>
-            </div>
-        </div>
-        <div class="insight-item negative">
-            <div class="insight-icon">
-                <i class="fas fa-exclamation"></i>
-            </div>
-            <div class="insight-content">
-                <h4>Midweek Spike</h4>
-                <p>Wednesdays are consistently your most stressful day</p>
-            </div>
-        </div>
-    `;
-    
-    // Correlation insights
-    document.getElementById('correlation-insights').innerHTML = `
-        <div class="correlation-item">
-            <div class="correlation-label">Exercise</div>
-            <div class="correlation-bar">
-                <div class="correlation-fill" style="width: 65%; background: var(--relaxed)"></div>
-            </div>
-            <div class="correlation-value">65% negative correlation</div>
-        </div>
-        <div class="correlation-item">
-            <div class="correlation-label">Sleep Quality</div>
-            <div class="correlation-bar">
-                <div class="correlation-fill" style="width: 72%; background: var(--relaxed)"></div>
-            </div>
-            <div class="correlation-value">72% negative correlation</div>
-        </div>
-    `;
-    
-    // Achievements
-    document.getElementById('achievements').innerHTML = `
-        <div class="achievement-item">
-            <div class="achievement-badge">
-                <i class="fas fa-fire"></i>
-            </div>
-            <div class="achievement-content">
-                <h4>7-Day Streak</h4>
-                <p>You've logged data for 7 consecutive days</p>
-            </div>
-        </div>
-    `;
-    
-    // Personalized alerts
-    document.getElementById('personalized-alerts').innerHTML = `
-        <div class="alert-item">
-            <div class="alert-icon">
-                <i class="fas fa-bell"></i>
-            </div>
-            <div class="alert-content">
-                <h4>Upcoming Stressful Period</h4>
-                <p>Tomorrow between 2PM-4PM is typically stressful for you</p>
-            </div>
-        </div>
-    `;
+    try {
+        // Stress triggers
+        const stressTriggersEl = document.getElementById('stress-triggers');
+        if (stressTriggersEl) {
+            stressTriggersEl.innerHTML = `
+                <div class="insight-item">
+                    <div class="insight-icon" style="background: var(--high-stress)">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Work Meetings</h4>
+                        <p>75% correlation with stress spikes</p>
+                    </div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-icon" style="background: var(--stressed)">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Screen Time</h4>
+                        <p>60% correlation with elevated stress</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Key insights
+        const keyInsightsEl = document.getElementById('key-insights');
+        if (keyInsightsEl) {
+            keyInsightsEl.innerHTML = `
+                <div class="insight-item positive">
+                    <div class="insight-icon">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Improving Trend</h4>
+                        <p>Your average stress has decreased by 15% this week</p>
+                    </div>
+                </div>
+                <div class="insight-item negative">
+                    <div class="insight-icon">
+                        <i class="fas fa-exclamation"></i>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Midweek Spike</h4>
+                        <p>Wednesdays are consistently your most stressful day</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Correlation insights
+        const correlationInsightsEl = document.getElementById('correlation-insights');
+        if (correlationInsightsEl) {
+            correlationInsightsEl.innerHTML = `
+                <div class="correlation-item">
+                    <div class="correlation-label">Exercise</div>
+                    <div class="correlation-bar">
+                        <div class="correlation-fill" style="width: 65%; background: var(--relaxed)"></div>
+                    </div>
+                    <div class="correlation-value">65% negative correlation</div>
+                </div>
+                <div class="correlation-item">
+                    <div class="correlation-label">Sleep Quality</div>
+                    <div class="correlation-bar">
+                        <div class="correlation-fill" style="width: 72%; background: var(--relaxed)"></div>
+                    </div>
+                    <div class="correlation-value">72% negative correlation</div>
+                </div>
+            `;
+        }
+
+        // Achievements
+        const achievementsEl = document.getElementById('achievements');
+        if (achievementsEl) {
+            achievementsEl.innerHTML = `
+                <div class="achievement-item">
+                    <div class="achievement-badge">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="achievement-content">
+                        <h4>7-Day Streak</h4>
+                        <p>You've logged data for 7 consecutive days</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Personalized alerts
+        const alertsEl = document.getElementById('personalized-alerts');
+        if (alertsEl) {
+            alertsEl.innerHTML = `
+                <div class="alert-item">
+                    <div class="alert-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h4>Upcoming Stressful Period</h4>
+                        <p>Tomorrow between 2PM-4PM is typically stressful for you</p>
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error generating insights content:', error);
+    }
 }
 
 // Helper functions for data generation
@@ -1260,19 +1312,23 @@ function generateRandomData(count, min, max) {
 
 // Load initial data from localStorage and fetch current data
 async function loadInitialData() {
-    // Load from localStorage
-    const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (storedData) {
-        historicalData = JSON.parse(storedData);
-        if (historicalData.length > 0) {
-            lastData = historicalData[historicalData.length - 1];
-            updateUI(lastData);
-            updateChartWithHistory();
+    try {
+        // Load from localStorage
+        const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedData) {
+            historicalData = JSON.parse(storedData);
+            if (historicalData.length > 0) {
+                lastData = historicalData[historicalData.length - 1];
+                updateUI(lastData);
+            }
         }
+        
+        // Fetch current data
+        await fetchAndUpdateData();
+    } catch (error) {
+        console.error('Error loading initial data:', error);
+        loadSampleData();
     }
-    
-    // Fetch current data
-    await fetchAndUpdateData();
 }
 
 // Fetch data from JSON and update storage
@@ -1324,6 +1380,8 @@ async function fetchData(url) {
 
 // Update chart with historical data
 function updateChartWithHistory() {
+    if (!chart) return;
+    
     // Clear existing data
     chart.data.labels = [];
     chart.data.datasets[0].data = [];
@@ -1347,6 +1405,8 @@ function updateChartWithHistory() {
 
 // Update chart with single data point
 function updateChart(data) {
+    if (!chart) return;
+    
     const now = new Date(data.timestamp);
     const timeLabel = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
     
@@ -1363,28 +1423,43 @@ function updateChart(data) {
 
 // Update UI elements
 function updateUI(data) {
-    const stressLevel = calculateStressLevel(data.conductance);
-    const status = getStatusForConductance(data.conductance);
-    
-    // Update real-time display
-    document.getElementById('current-stress').textContent = `${stressLevel.toFixed(0)}%`;
-    document.getElementById('current-status').textContent = data.scl_status || status.text;
-    document.getElementById('current-status').style.background = status.color;
-    document.getElementById('current-status').style.color = '#fff';
-    
-    // Update stress indicator
-    const indicator = document.getElementById('stress-indicator');
-    indicator.style.left = `${Math.min(100, Math.max(0, stressLevel))}%`;
-    indicator.style.borderColor = status.color;
-    
-    // Update metrics
-    const stats = calculateStatistics(historicalData);
-    document.getElementById('avg-stress').textContent = `${stats.avgSCL.toFixed(1)} μS`;
-    document.getElementById('peak-stress').textContent = `${stats.maxConductance.toFixed(1)} μS`;
-    document.getElementById('stress-duration').textContent = `${stats.stressDuration} mins`;
-    document.getElementById('recovery-rate').textContent = `${stats.recoveryRate.toFixed(0)}%`;
-    
-    updateTrendIndicators();
+    try {
+        const stressLevel = calculateStressLevel(data.conductance);
+        const status = getStatusForConductance(data.conductance);
+        
+        // Update real-time display
+        const currentStressEl = document.getElementById('current-stress');
+        const currentStatusEl = document.getElementById('current-status');
+        if (currentStressEl && currentStatusEl) {
+            currentStressEl.textContent = `${stressLevel.toFixed(0)}%`;
+            currentStatusEl.textContent = data.scl_status || status.text;
+            currentStatusEl.style.background = status.color;
+            currentStatusEl.style.color = '#fff';
+        }
+        
+        // Update stress indicator
+        const indicator = document.getElementById('stress-indicator');
+        if (indicator) {
+            indicator.style.left = `${Math.min(100, Math.max(0, stressLevel))}%`;
+            indicator.style.borderColor = status.color;
+        }
+        
+        // Update metrics
+        const stats = calculateStatistics(historicalData);
+        const avgStressEl = document.getElementById('avg-stress');
+        const peakStressEl = document.getElementById('peak-stress');
+        const stressDurationEl = document.getElementById('stress-duration');
+        const recoveryRateEl = document.getElementById('recovery-rate');
+        
+        if (avgStressEl) avgStressEl.textContent = `${stats.avgSCL.toFixed(1)} μS`;
+        if (peakStressEl) peakStressEl.textContent = `${stats.maxConductance.toFixed(1)} μS`;
+        if (stressDurationEl) stressDurationEl.textContent = `${stats.stressDuration} mins`;
+        if (recoveryRateEl) recoveryRateEl.textContent = `${stats.recoveryRate.toFixed(0)}%`;
+        
+        updateTrendIndicators();
+    } catch (error) {
+        console.error('Error updating UI:', error);
+    }
 }
 
 // Calculate stress level (0-100%)
@@ -1472,15 +1547,59 @@ function updateTrendIndicators() {
 
 // Generate hourly forecast based on historical patterns
 function generateHourlyForecast() {
-    if (historicalData.length < 24) {
-        // Fallback to default forecast if not enough data
-        const hours = [];
+    try {
+        if (historicalData.length < 24) {
+            // Fallback to default forecast if not enough data
+            const hours = [];
+            for (let i = 0; i < 12; i++) {
+                const hour = (new Date().getHours() + i) % 24;
+                const stressLevel = 50 + (Math.random() * 20 - 10);
+                const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
+                
+                hours.push(`
+                    <div class="forecast-hour">
+                        <div class="forecast-time">${hour}:00</div>
+                        <div class="forecast-icon" style="background: ${status.color}">
+                            <i class="fas ${getIconForStatus(status.text)}"></i>
+                        </div>
+                        <div class="forecast-value">${stressLevel.toFixed(0)}%</div>
+                    </div>
+                `);
+            }
+            if (hourlyForecast) {
+                hourlyForecast.innerHTML = hours.join('');
+            }
+            return;
+        }
+        
+        // Calculate hourly averages
+        const hourlyData = {};
+        historicalData.forEach(entry => {
+            const hour = new Date(entry.timestamp).getHours();
+            if (!hourlyData[hour]) {
+                hourlyData[hour] = { sum: 0, count: 0 };
+            }
+            hourlyData[hour].sum += entry.conductance;
+            hourlyData[hour].count++;
+        });
+        
+        const hourlyAverages = {};
+        for (const [hour, data] of Object.entries(hourlyData)) {
+            hourlyAverages[hour] = data.sum / data.count;
+        }
+        
+        // Generate forecast
+        const now = new Date();
+        const currentHour = now.getHours();
+        const forecast = [];
+        
         for (let i = 0; i < 12; i++) {
-            const hour = (new Date().getHours() + i) % 24;
-            const stressLevel = 50 + (Math.random() * 20 - 10);
-            const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
+            const hour = (currentHour + i) % 24;
+            const avg = hourlyAverages[hour] || 3.5; // Default if no data
+            const stressLevel = calculateStressLevel(avg + (Math.random() * 0.5 - 0.25));
+            const status = getStatusForConductance(avg);
             
-            hours.push(`
+            forecast.push(`
                 <div class="forecast-hour">
                     <div class="forecast-time">${hour}:00</div>
                     <div class="forecast-icon" style="background: ${status.color}">
@@ -1490,61 +1609,68 @@ function generateHourlyForecast() {
                 </div>
             `);
         }
-        hourlyForecast.innerHTML = hours.join('');
-        return;
-    }
-    
-    // Calculate hourly averages
-    const hourlyData = {};
-    historicalData.forEach(entry => {
-        const hour = new Date(entry.timestamp).getHours();
-        if (!hourlyData[hour]) {
-            hourlyData[hour] = { sum: 0, count: 0 };
-        }
-        hourlyData[hour].sum += entry.conductance;
-        hourlyData[hour].count++;
-    });
-    
-    const hourlyAverages = {};
-    for (const [hour, data] of Object.entries(hourlyData)) {
-        hourlyAverages[hour] = data.sum / data.count;
-    }
-    
-    // Generate forecast
-    const now = new Date();
-    const currentHour = now.getHours();
-    const forecast = [];
-    
-    for (let i = 0; i < 12; i++) {
-        const hour = (currentHour + i) % 24;
-        const avg = hourlyAverages[hour] || 3.5; // Default if no data
-        const stressLevel = calculateStressLevel(avg + (Math.random() * 0.5 - 0.25));
-        const status = getStatusForConductance(avg);
         
-        forecast.push(`
-            <div class="forecast-hour">
-                <div class="forecast-time">${hour}:00</div>
-                <div class="forecast-icon" style="background: ${status.color}">
-                    <i class="fas ${getIconForStatus(status.text)}"></i>
-                </div>
-                <div class="forecast-value">${stressLevel.toFixed(0)}%</div>
-            </div>
-        `);
+        if (hourlyForecast) {
+            hourlyForecast.innerHTML = forecast.join('');
+        }
+    } catch (error) {
+        console.error('Error generating hourly forecast:', error);
     }
-    
-    hourlyForecast.innerHTML = forecast.join('');
 }
 
 // Generate weekly overview based on historical patterns
 function generateWeeklyData() {
-    if (historicalData.length < 24) {
-        // Fallback to default weekly data if not enough data
+    try {
+        if (historicalData.length < 24) {
+            // Fallback to default weekly data if not enough data
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = new Date().getDay();
+            const weekData = days.map((day, index) => {
+                const isToday = index === today;
+                const stressLevel = 50 + (Math.sin(index) * 20);
+                const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
+                
+                return `
+                    <div class="weekly-day ${isToday ? 'today' : ''}">
+                        <div class="day">${day}</div>
+                        <div class="stress-icon" style="background: ${status.color}">
+                            <i class="fas ${getIconForStatus(status.text)}"></i>
+                        </div>
+                        <div class="stress-level">${stressLevel.toFixed(0)}%</div>
+                        <div class="stress-range">${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%</div>
+                    </div>
+                `;
+            });
+            if (weeklyGrid) {
+                weeklyGrid.innerHTML = weekData.join('');
+            }
+            return;
+        }
+        
+        // Calculate daily averages
+        const dailyData = {};
+        historicalData.forEach(entry => {
+            const day = new Date(entry.timestamp).getDay(); // 0-6 (Sun-Sat)
+            if (!dailyData[day]) {
+                dailyData[day] = { sum: 0, count: 0 };
+            }
+            dailyData[day].sum += entry.conductance;
+            dailyData[day].count++;
+        });
+        
+        const dailyAverages = {};
+        for (const [day, data] of Object.entries(dailyData)) {
+            dailyAverages[day] = data.sum / data.count;
+        }
+        
+        // Generate weekly data
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const today = new Date().getDay();
         const weekData = days.map((day, index) => {
             const isToday = index === today;
-            const stressLevel = 50 + (Math.sin(index) * 20);
-            const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
+            const avg = dailyAverages[index] || 3.5; // Default if no data
+            const stressLevel = calculateStressLevel(avg + (Math.sin(index) * 1.5));
+            const status = getStatusForConductance(avg);
             
             return `
                 <div class="weekly-day ${isToday ? 'today' : ''}">
@@ -1557,48 +1683,13 @@ function generateWeeklyData() {
                 </div>
             `;
         });
-        weeklyGrid.innerHTML = weekData.join('');
-        return;
-    }
-    
-    // Calculate daily averages
-    const dailyData = {};
-    historicalData.forEach(entry => {
-        const day = new Date(entry.timestamp).getDay(); // 0-6 (Sun-Sat)
-        if (!dailyData[day]) {
-            dailyData[day] = { sum: 0, count: 0 };
-        }
-        dailyData[day].sum += entry.conductance;
-        dailyData[day].count++;
-    });
-    
-    const dailyAverages = {};
-    for (const [day, data] of Object.entries(dailyData)) {
-        dailyAverages[day] = data.sum / data.count;
-    }
-    
-    // Generate weekly data
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const today = new Date().getDay();
-    const weekData = days.map((day, index) => {
-        const isToday = index === today;
-        const avg = dailyAverages[index] || 3.5; // Default if no data
-        const stressLevel = calculateStressLevel(avg + (Math.sin(index) * 1.5));
-        const status = getStatusForConductance(avg);
         
-        return `
-            <div class="weekly-day ${isToday ? 'today' : ''}">
-                <div class="day">${day}</div>
-                <div class="stress-icon" style="background: ${status.color}">
-                    <i class="fas ${getIconForStatus(status.text)}"></i>
-                </div>
-                <div class="stress-level">${stressLevel.toFixed(0)}%</div>
-                <div class="stress-range">${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%</div>
-            </div>
-        `;
-    });
-    
-    weeklyGrid.innerHTML = weekData.join('');
+        if (weeklyGrid) {
+            weeklyGrid.innerHTML = weekData.join('');
+        }
+    } catch (error) {
+        console.error('Error generating weekly data:', error);
+    }
 }
 
 // Get icon for status
@@ -1614,172 +1705,200 @@ function getIconForStatus(status) {
 
 // Generate recommendations
 function generateRecommendations() {
-    const recommendations = [
-        {
-            icon: 'fa-walking',
-            color: 'var(--relaxed)',
-            title: 'Take a Short Walk',
-            content: 'A 5-minute walk can help reduce stress and improve circulation.'
-        },
-        {
-            icon: 'fa-water',
-            color: 'var(--primary)',
-            title: 'Drink Water',
-            content: 'Dehydration can increase stress responses. Drink at least 8 glasses daily.'
-        },
-        {
-            icon: 'fa-wind',
-            color: 'var(--normal)',
-            title: 'Deep Breathing',
-            content: 'Practice 4-7-8 breathing: Inhale 4s, hold 7s, exhale 8s.'
-        },
-        {
-            icon: 'fa-headphones',
-            color: 'var(--stressed)',
-            title: 'Listen to Music',
-            content: 'Calming music at 60 BPM can synchronize with your brain waves.'
+    try {
+        const recommendations = [
+            {
+                icon: 'fa-walking',
+                color: 'var(--relaxed)',
+                title: 'Take a Short Walk',
+                content: 'A 5-minute walk can help reduce stress and improve circulation.'
+            },
+            {
+                icon: 'fa-water',
+                color: 'var(--primary)',
+                title: 'Drink Water',
+                content: 'Dehydration can increase stress responses. Drink at least 8 glasses daily.'
+            },
+            {
+                icon: 'fa-wind',
+                color: 'var(--normal)',
+                title: 'Deep Breathing',
+                content: 'Practice 4-7-8 breathing: Inhale 4s, hold 7s, exhale 8s.'
+            },
+            {
+                icon: 'fa-headphones',
+                color: 'var(--stressed)',
+                title: 'Listen to Music',
+                content: 'Calming music at 60 BPM can synchronize with your brain waves.'
+            }
+        ];
+        
+        if (recommendationsContainer) {
+            recommendationsContainer.innerHTML = recommendations.map(rec => `
+                <div class="recommendation-item">
+                    <div class="recommendation-icon" style="background: ${rec.color}">
+                        <i class="fas ${rec.icon}"></i>
+                    </div>
+                    <div class="recommendation-content">
+                        <h4>${rec.title}</h4>
+                        <p>${rec.content}</p>
+                    </div>
+                </div>
+            `).join('');
         }
-    ];
-    
-    recommendationsContainer.innerHTML = recommendations.map(rec => `
-        <div class="recommendation-item">
-            <div class="recommendation-icon" style="background: ${rec.color}">
-                <i class="fas ${rec.icon}"></i>
-            </div>
-            <div class="recommendation-content">
-                <h4>${rec.title}</h4>
-                <p>${rec.content}</p>
-            </div>
-        </div>
-    `).join('');
+    } catch (error) {
+        console.error('Error generating recommendations:', error);
+    }
 }
 
 // Setup event listeners
 function setupEventListeners() {
-    // Modal controls
-    detailBtn.addEventListener('click', showDetailModal);
-    closeModalBtn.addEventListener('click', hideDetailModal);
-    modalOverlay.addEventListener('click', hideDetailModal);
-    
-    // Nav tabs
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const tabId = tab.getAttribute('data-tab');
-            
-            // Update active tab
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            // Show corresponding content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-                if (content.id === tabId) {
-                    content.classList.add('active');
-                    
-                    // Initialize charts if we're on the trends tab
-                    if (tabId === 'trends' && !trendChart) {
-                        initTrendCharts();
+    try {
+        // Modal controls
+        if (detailBtn) detailBtn.addEventListener('click', showDetailModal);
+        if (closeModalBtn) closeModalBtn.addEventListener('click', hideDetailModal);
+        if (modalOverlay) modalOverlay.addEventListener('click', hideDetailModal);
+        
+        // Nav tabs
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                // Update active tab
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId) {
+                        content.classList.add('active');
+                        
+                        // Initialize charts if we're on the trends tab
+                        if (tabId === 'trends') {
+                            initTrendCharts();
+                        }
+                        
+                        // Generate insights if we're on the insights tab
+                        if (tabId === 'insights') {
+                            generateInsightsContent();
+                        }
                     }
-                    
-                    // Generate insights if we're on the insights tab
-                    if (tabId === 'insights') {
-                        generateInsightsContent();
-                    }
-                }
+                });
             });
         });
-    });
-    
-    // Keyboard accessibility
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.style.display === 'block') {
-            hideDetailModal();
-        }
-    });
+        
+        // Keyboard accessibility
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.style.display === 'block') {
+                hideDetailModal();
+            }
+        });
+    } catch (error) {
+        console.error('Error setting up event listeners:', error);
+    }
 }
 
 // Show modal with detailed analysis
 function showDetailModal() {
-    modalOverlay.style.display = 'block';
-    modal.style.display = 'block';
-    modalOverlay.style.opacity = '1';
-    populateModalContent();
+    try {
+        if (modalOverlay && modal) {
+            modalOverlay.style.display = 'block';
+            modal.style.display = 'block';
+            modalOverlay.style.opacity = '1';
+            populateModalContent();
+        }
+    } catch (error) {
+        console.error('Error showing modal:', error);
+    }
 }
 
 // Hide modal
 function hideDetailModal() {
-    modalOverlay.style.opacity = '0';
-    setTimeout(() => {
-        modalOverlay.style.display = 'none';
-        modal.style.display = 'none';
-    }, 300);
+    try {
+        if (modalOverlay && modal) {
+            modalOverlay.style.opacity = '0';
+            setTimeout(() => {
+                modalOverlay.style.display = 'none';
+                modal.style.display = 'none';
+            }, 300);
+        }
+    } catch (error) {
+        console.error('Error hiding modal:', error);
+    }
 }
 
 // Populate modal content with analysis
 function populateModalContent() {
-    if (historicalData.length === 0) {
-        analysisGrid.innerHTML = '<p>No historical data available</p>';
-        return;
+    try {
+        if (!analysisGrid) return;
+        
+        if (historicalData.length === 0) {
+            analysisGrid.innerHTML = '<p>No historical data available</p>';
+            return;
+        }
+        
+        const stats = calculateStatistics(historicalData);
+        
+        analysisGrid.innerHTML = `
+            <div class="analysis-item">
+                <label><i class="fas fa-wave-square"></i> Average SCL</label>
+                <div class="value">${stats.avgSCL.toFixed(2)} μS</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / GSR_THRESHOLDS.HIGH_STRESS) * 100)}%; 
+                        background: ${getColorForConductance(stats.avgSCL)};"></div>
+                </div>
+                <small>Normal range: 1-5 μS</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-bolt"></i> Total SCR Events</label>
+                <div class="value">${historicalData.reduce((sum, item) => sum + (item.scrEvents || 0), 0)}</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / 5) * 100)}%; 
+                        background: ${getColorForConductance(stats.avgSCL)};"></div>
+                </div>
+                <small>Normal: &lt;3 per minute</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-clock"></i> Stress Duration</label>
+                <div class="value">${stats.stressDuration} mins</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(100, (stats.stressDuration / 180) * 100)}%; 
+                        background: ${getColorForDuration(stats.stressDuration)};"></div>
+                </div>
+                <small>Today</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-chart-pie"></i> Stress Distribution</label>
+                <div class="value">${stats.stressPercentage}% of time</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${stats.stressPercentage}%; 
+                        background: ${getColorForPercentage(stats.stressPercentage)};"></div>
+                </div>
+                <small>Above threshold</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-heartbeat"></i> Stress Variability</label>
+                <div class="value">${calculateVariability(historicalData).toFixed(2)}</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(100, (calculateVariability(historicalData) / 5) * 100)}%; 
+                        background: ${getColorForVariability(calculateVariability(historicalData))};"></div>
+                </div>
+                <small>Lower is better</small>
+            </div>
+            <div class="analysis-item">
+                <label><i class="fas fa-undo"></i> Recovery Efficiency</label>
+                <div class="value">${stats.recoveryRate.toFixed(1)}%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${stats.recoveryRate}%; 
+                        background: ${getColorForRecovery(stats.recoveryRate)};"></div>
+                </div>
+                <small>Higher is better</small>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error populating modal content:', error);
     }
-    
-    const stats = calculateStatistics(historicalData);
-    
-    analysisGrid.innerHTML = `
-        <div class="analysis-item">
-            <label><i class="fas fa-wave-square"></i> Average SCL</label>
-            <div class="value">${stats.avgSCL.toFixed(2)} μS</div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / GSR_THRESHOLDS.HIGH_STRESS) * 100)}%; 
-                    background: ${getColorForConductance(stats.avgSCL)};"></div>
-            </div>
-            <small>Normal range: 1-5 μS</small>
-        </div>
-        <div class="analysis-item">
-            <label><i class="fas fa-bolt"></i> Total SCR Events</label>
-            <div class="value">${historicalData.reduce((sum, item) => sum + (item.scrEvents || 0), 0)}</div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / 5) * 100)}%; 
-                    background: ${getColorForConductance(stats.avgSCL)};"></div>
-            </div>
-            <small>Normal: &lt;3 per minute</small>
-        </div>
-        <div class="analysis-item">
-            <label><i class="fas fa-clock"></i> Stress Duration</label>
-            <div class="value">${stats.stressDuration} mins</div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: ${Math.min(100, (stats.stressDuration / 180) * 100)}%; 
-                    background: ${getColorForDuration(stats.stressDuration)};"></div>
-            </div>
-            <small>Today</small>
-        </div>
-        <div class="analysis-item">
-            <label><i class="fas fa-chart-pie"></i> Stress Distribution</label>
-            <div class="value">${stats.stressPercentage}% of time</div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: ${stats.stressPercentage}%; 
-                    background: ${getColorForPercentage(stats.stressPercentage)};"></div>
-            </div>
-            <small>Above threshold</small>
-        </div>
-        <div class="analysis-item">
-            <label><i class="fas fa-heartbeat"></i> Stress Variability</label>
-            <div class="value">${calculateVariability(historicalData).toFixed(2)}</div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: ${Math.min(100, (calculateVariability(historicalData) / 5) * 100)}%; 
-                    background: ${getColorForVariability(calculateVariability(historicalData))};"></div>
-            </div>
-            <small>Lower is better</small>
-        </div>
-        <div class="analysis-item">
-            <label><i class="fas fa-undo"></i> Recovery Efficiency</label>
-            <div class="value">${stats.recoveryRate.toFixed(1)}%</div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: ${stats.recoveryRate}%; 
-                    background: ${getColorForRecovery(stats.recoveryRate)};"></div>
-            </div>
-            <small>Higher is better</small>
-        </div>
-    `;
 }
 
 // Calculate variability of stress levels
@@ -1832,23 +1951,31 @@ function getColorForRecovery(recovery) {
 // Start periodic data refresh
 function startDataRefresh() {
     setInterval(async () => {
-        await fetchAndUpdateData();
+        try {
+            await fetchAndUpdateData();
+        } catch (error) {
+            console.error('Error during data refresh:', error);
+        }
     }, 5000); // Refresh every 5 seconds
 }
 
 // Fallback to sample data if needed
 function loadSampleData() {
-    console.log('Loading sample data');
-    const sampleData = {
-        timestamp: Date.now(),
-        conductance: 3.3,
-        scrEvents: 1,
-        scl_status: "Normal"
-    };
-    
-    historicalData = [sampleData];
-    lastData = sampleData;
-    updateUI(sampleData);
+    try {
+        console.log('Loading sample data');
+        const sampleData = {
+            timestamp: Date.now(),
+            conductance: 3.3,
+            scrEvents: 1,
+            scl_status: "Normal"
+        };
+        
+        historicalData = [sampleData];
+        lastData = sampleData;
+        updateUI(sampleData);
+    } catch (error) {
+        console.error('Error loading sample data:', error);
+    }
 }
 </script>
     <script>
