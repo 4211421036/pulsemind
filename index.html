@@ -1844,6 +1844,9 @@ function loadSampleData() {
 // ======================== //
 // PWA INSTALLATION MANAGER //
 // ======================== //
+// ======================== //
+// PWA INSTALLATION MANAGER //
+// ======================== //
 class PWAInstallManager {
   constructor() {
     this.deferredPrompt = null;
@@ -1889,7 +1892,7 @@ class PWAInstallManager {
     const lastPromptTime = localStorage.getItem('lastPromptTime');
     const now = Date.now();
     
-    return !lastPromptTime || (now - parseInt(lastPromptTime) > this.promptCooldown;
+    return !lastPromptTime || (now - parseInt(lastPromptTime)) > this.promptCooldown;
   }
 
   showInstallPrompt() {
@@ -1937,43 +1940,98 @@ class PWAInstallManager {
 // ======================== //
 class BackgroundSyncManager {
   constructor() {
+    this.syncSupported = 'serviceWorker' in navigator && 'SyncManager' in window;
+    this.periodicSyncSupported = 'serviceWorker' in navigator && 'PeriodicSyncManager' in window;
+    
     this.initSyncButton();
+    this.checkNotificationPermission();
   }
 
   async initSyncButton() {
     const syncBtn = document.getElementById('enable-sync-btn');
     if (!syncBtn) return;
 
-    syncBtn.addEventListener('click', async () => {
-      const granted = await this.requestSyncPermission();
-      if (granted) {
-        this.showToast('Background Sync enabled!');
-        syncBtn.style.display = 'none';
-      }
-    });
+    // Tampilkan tombol sync hanya jika tidak berhasil registrasi otomatis
+    if (this.syncSupported || this.periodicSyncSupported) {
+      syncBtn.style.display = 'inline-block';
+      syncBtn.addEventListener('click', async () => {
+        const granted = await this.requestSyncPermission();
+        if (granted) {
+          this.showToast('Background Sync berhasil diaktifkan!');
+          syncBtn.style.display = 'none';
+        }
+      });
+    }
+
+    // Otomatis mencoba registrasi periodic sync
+    this.requestSyncPermission();
+  }
+
+  async checkNotificationPermission() {
+    if (!('Notification' in window)) {
+      console.log('Browser tidak mendukung notifikasi');
+      return;
+    }
+
+    // Jika belum ada izin notifikasi, minta izin
+    if (Notification.permission !== 'granted') {
+      document.getElementById('enable-sync-btn').style.display = 'inline-block';
+    } else {
+      // Jika sudah punya izin, langsung minta izin sync juga
+      await this.requestSyncPermission();
+    }
   }
 
   async requestSyncPermission() {
     try {
+      // Pastikan service worker sudah terdaftar
+      if (!('serviceWorker' in navigator)) {
+        throw new Error('Service Worker tidak didukung');
+      }
+
+      // Minta izin notifikasi terlebih dahulu
+      if (Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          throw new Error('Izin notifikasi ditolak');
+        }
+      }
+
       const registration = await navigator.serviceWorker.ready;
       
-      if (!('periodicSync' in registration)) {
-        throw new Error('Periodic Sync not supported');
+      // Coba daftarkan one-time sync terlebih dahulu (didukung lebih luas)
+      if ('sync' in registration) {
+        await registration.sync.register('visibility-sync');
+        console.log('One-time sync berhasil didaftarkan');
       }
+      
+      // Coba daftarkan periodic sync (tidak didukung di semua browser)
+      if ('periodicSync' in registration) {
+        try {
+          const status = await navigator.permissions.query({
+            name: 'periodic-background-sync'
+          });
 
-      const status = await navigator.permissions.query({
-        name: 'periodic-background-sync'
-      });
-
-      if (status.state === 'granted') {
-        await registration.periodicSync.register('daily-sync', {
-          minInterval: 24 * 60 * 60 * 1000 // 24 hours
-        });
-        return true;
+          if (status.state === 'granted') {
+            await registration.periodicSync.register('daily-reminder', {
+              minInterval: 24 * 60 * 60 * 1000 // 24 jam
+            });
+            console.log('Periodic sync berhasil didaftarkan');
+            return true;
+          } else {
+            console.log('Izin periodic sync ditolak');
+            this.implementSyncFallback();
+          }
+        } catch (err) {
+          console.error('Error periodic sync:', err);
+          this.implementSyncFallback();
+        }
       } else {
-        this.showSyncBenefitsModal();
-        return false;
+        console.log('Periodic sync tidak didukung');
+        this.implementSyncFallback();
       }
+      
+      return false;
     } catch (error) {
       console.error('Sync error:', error);
       this.implementSyncFallback();
@@ -1981,19 +2039,77 @@ class BackgroundSyncManager {
     }
   }
 
-  showSyncBenefitsModal() {
-    // Implement your custom modal explaining sync benefits
-    console.log('Show educational UI about sync benefits');
+  implementSyncFallback() {
+    console.log('Menggunakan fallback sync (untuk Android)');
+    
+    // Metode fallback menggunakan localStorage dan visibility change
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        // Saat pengguna membuka aplikasi, lakukan sinkronisasi
+        this.triggerSync();
+      }
+    });
+    
+    // Juga atur timer untuk memeriksa saat aplikasi terbuka
+    this.setupDailyCheckTimer();
   }
 
-  implementSyncFallback() {
-    console.log('Using fallback sync strategy');
-    // Your fallback implementation here
+  setupDailyCheckTimer() {
+    // Ini adalah timer sederhana yang berjalan di latar belakang selama tab terbuka
+    const checkAndNotify = () => {
+      const now = new Date();
+      const lastCheck = localStorage.getItem('lastNotificationCheck');
+      const lastCheckDate = lastCheck ? new Date(parseInt(lastCheck)) : new Date(0);
+      
+      // Jika sudah lebih dari 20 jam sejak pemeriksaan terakhir
+      if (now - lastCheckDate > 20 * 60 * 60 * 1000) {
+        this.triggerSync();
+        localStorage.setItem('lastNotificationCheck', now.getTime().toString());
+      }
+      
+      // Periksa kembali setiap 1 jam
+      setTimeout(checkAndNotify, 60 * 60 * 1000);
+    };
+    
+    // Mulai pemeriksaan
+    checkAndNotify();
+  }
+
+  async triggerSync() {
+    // Trigger sync via pesan ke service worker
+    const registration = await navigator.serviceWorker.ready;
+    const controller = registration.active;
+    
+    if (controller) {
+      controller.postMessage({
+        type: 'MANUAL_SYNC',
+        time: new Date().getTime()
+      });
+    }
   }
 
   showToast(message) {
-    // Implement toast notification
-    console.log('Toast:', message);
+    // Implementasi toast notification sederhana
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Style toast
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.backgroundColor = '#323232';
+    toast.style.color = 'white';
+    toast.style.padding = '12px 24px';
+    toast.style.borderRadius = '4px';
+    toast.style.zIndex = '1000';
+    
+    // Hapus toast setelah 3 detik
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 3000);
   }
 }
 
@@ -2001,29 +2117,65 @@ class BackgroundSyncManager {
 // SERVICE WORKER REGISTRATION //
 // ======================== //
 async function registerServiceWorker() {
-  if (!('serviceWorker' in navigator)) return;
+  if (!('serviceWorker' in navigator)) {
+    console.log('Service Worker tidak didukung browser ini');
+    return;
+  }
 
   try {
-    const registration = await navigator.serviceWorker.register('/sw.js');
-    console.log('Service Worker registered');
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/'
+    });
+    console.log('Service Worker berhasil didaftarkan dengan scope:', registration.scope);
 
-    // Initialize managers
+    // Inisialisasi managers
     new PWAInstallManager();
     new BackgroundSyncManager();
 
-    // Request notification permission
+    // Secara otomatis minta izin notifikasi untuk Android
     if ('Notification' in window) {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        console.log('Notification permission granted');
+      // Pada Android, sebaiknya minta izin ketika pengguna mengklik tombol
+      const notifButton = document.createElement('button');
+      notifButton.textContent = 'Aktifkan Notifikasi';
+      notifButton.className = 'notification-button';
+      notifButton.style.display = Notification.permission === 'granted' ? 'none' : 'block';
+      
+      notifButton.addEventListener('click', async () => {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          console.log('Izin notifikasi diberikan');
+          notifButton.style.display = 'none';
+          
+          // Kirim pesan ke service worker untuk menunjukkan bahwa izin sudah diberikan
+          const sw = registration.active;
+          if (sw) {
+            sw.postMessage({
+              type: 'NOTIFICATION_PERMISSION_GRANTED'
+            });
+          }
+        }
+      });
+      
+      // Tambahkan tombol ke DOM jika belum ada izin
+      if (Notification.permission !== 'granted') {
+        document.body.appendChild(notifButton);
       }
     }
+    
+    // Daftarkan event untuk mendengarkan pesan dari service worker
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'CHART_UPDATE') {
+        console.log('Menerima pembaruan dari service worker:', event.data);
+        // Implementasi pembaruan UI di sini
+      }
+    });
+    
   } catch (error) {
-    console.error('Service Worker registration failed:', error);
+    console.error('Pendaftaran Service Worker gagal:', error);
   }
 }
 
-// Initialize everything when DOM loads
+// Inisialisasi saat DOM dimuat
 document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
 });
