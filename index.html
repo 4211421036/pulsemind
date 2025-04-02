@@ -969,6 +969,188 @@
             });
         });
     </script>
+    <script>
+        // Add this to your JavaScript file
+
+// Create and insert the translation button
+function createTranslationButton() {
+  const translationButton = document.createElement('button');
+  translationButton.id = 'translate-btn';
+  translationButton.className = 'translate-btn';
+  translationButton.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> English';
+  translationButton.setAttribute('aria-label', 'Toggle between Indonesian and English');
+  translationButton.title = 'Press T to toggle language (T)';
+  
+  // Insert the button in the header area
+  const dashboardElement = document.querySelector('.dashboard');
+  dashboardElement.insertAdjacentElement('afterbegin', translationButton);
+  
+  return translationButton;
+}
+
+// Dictionary for translations
+const translations = {
+  english: {
+    'Overview': 'Overview',
+    'Trends': 'Trends',
+    'Insights': 'Insights',
+    'Real-time Mental State': 'Real-time Mental State',
+    'Calibrating...': 'Calibrating...',
+    'Relaxed': 'Relaxed',
+    'Normal': 'Normal',
+    'Stressed': 'Stressed',
+    'High Stress': 'High Stress',
+    "Today's Forecast": "Today's Forecast",
+    'Recommendations': 'Recommendations',
+    'Key Metrics': 'Key Metrics',
+    'Avg. Stress (24h)': 'Avg. Stress (24h)',
+    'Peak Today': 'Peak Today',
+    'Stress Duration': 'Stress Duration',
+    'Recovery Rate': 'Recovery Rate',
+    'Stable': 'Stable',
+    'View Full Analysis': 'View Full Analysis',
+    'Weekly Overview': 'Weekly Overview',
+    'Long-term Stress Trends': 'Long-term Stress Trends',
+    'Weekly Stress Patterns': 'Weekly Stress Patterns',
+    'Time-of-Day Analysis': 'Time-of-Day Analysis',
+    'Stress Triggers': 'Stress Triggers',
+    'Key Insights': 'Key Insights',
+    'Stress Correlations': 'Stress Correlations',
+    'Progress & Achievements': 'Progress & Achievements',
+    'Personalized Alerts': 'Personalized Alerts',
+    'Mental Health Analysis': 'Mental Health Analysis',
+    // Add more translations as needed
+  },
+  indonesian: {
+    'Overview': 'Ikhtisar',
+    'Trends': 'Tren',
+    'Insights': 'Wawasan',
+    'Real-time Mental State': 'Kondisi Mental Waktu Nyata',
+    'Calibrating...': 'Mengkalibrasi...',
+    'Relaxed': 'Santai',
+    'Normal': 'Normal',
+    'Stressed': 'Stres',
+    'High Stress': 'Stres Tinggi',
+    "Today's Forecast": 'Prakiraan Hari Ini',
+    'Recommendations': 'Rekomendasi',
+    'Key Metrics': 'Metrik Utama',
+    'Avg. Stress (24h)': 'Rata-rata Stres (24j)',
+    'Peak Today': 'Puncak Hari Ini',
+    'Stress Duration': 'Durasi Stres',
+    'Recovery Rate': 'Tingkat Pemulihan',
+    'Stable': 'Stabil',
+    'View Full Analysis': 'Lihat Analisis Lengkap',
+    'Weekly Overview': 'Ikhtisar Mingguan',
+    'Long-term Stress Trends': 'Tren Stres Jangka Panjang',
+    'Weekly Stress Patterns': 'Pola Stres Mingguan',
+    'Time-of-Day Analysis': 'Analisis Waktu Harian',
+    'Stress Triggers': 'Pemicu Stres',
+    'Key Insights': 'Wawasan Utama',
+    'Stress Correlations': 'Korelasi Stres',
+    'Progress & Achievements': 'Kemajuan & Pencapaian',
+    'Personalized Alerts': 'Peringatan Personal',
+    'Mental Health Analysis': 'Analisis Kesehatan Mental',
+    // Add more translations as needed
+  }
+};
+
+// Function to translate the UI
+function translateUI(language) {
+  const dict = translations[language];
+  const elements = document.querySelectorAll('h2, h3, button, span, div.status, label, div.trend');
+  
+  elements.forEach(element => {
+    const originalText = element.textContent.trim();
+    if (dict[originalText]) {
+      element.textContent = dict[originalText];
+    }
+    
+    // For special cases like buttons with icons
+    if (element.tagName === 'BUTTON' && element.querySelector('.fas')) {
+      const buttonText = element.textContent.trim();
+      if (dict[buttonText]) {
+        const icon = element.querySelector('.fas').outerHTML;
+        element.innerHTML = icon + ' ' + dict[buttonText];
+      }
+    }
+  });
+  
+  // Update the button text
+  const translateBtn = document.getElementById('translate-btn');
+  if (language === 'english') {
+    translateBtn.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> Bahasa Indonesia';
+  } else {
+    translateBtn.innerHTML = '<span class="fas fa-language" aria-hidden="true"></span> English';
+  }
+}
+
+// Initialize the translation functionality
+function initTranslation() {
+  let currentLanguage = 'english';
+  const translateBtn = createTranslationButton();
+  
+  // Toggle language on button click
+  translateBtn.addEventListener('click', () => {
+    currentLanguage = currentLanguage === 'english' ? 'indonesian' : 'english';
+    translateUI(currentLanguage);
+  });
+  
+  // Toggle language on 'T' key press
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 't' || event.key === 'T') {
+      currentLanguage = currentLanguage === 'english' ? 'indonesian' : 'english';
+      translateUI(currentLanguage);
+      // Visual feedback for keyboard shortcut
+      translateBtn.classList.add('active');
+      setTimeout(() => translateBtn.classList.remove('active'), 200);
+    }
+  });
+}
+
+// Add CSS for the translation button
+function addTranslationStyles() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .translate-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 100;
+      transition: all 0.2s ease;
+    }
+    
+    .translate-btn:hover {
+      background-color: #0056b3;
+    }
+    
+    .translate-btn.active {
+      transform: scale(1.1);
+      background-color: #28a745;
+    }
+    
+    .translate-btn .fas {
+      font-size: 16px;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// Initialize everything when the DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  addTranslationStyles();
+  initTranslation();
+});
+    </script>
 <script>
 // DOM Elements with null checks
 const modal = document.getElementById('detail-modal');
