@@ -1825,7 +1825,7 @@ function loadSampleData() {
     }
 }
 </script>
-    <script>
+<script>
 // Enhanced PWA Installation and Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
@@ -1871,7 +1871,7 @@ async function setupPeriodicSync(registration) {
       
       if (status.state === 'granted') {
         await registration.periodicSync.register('reset-snooze-counter', {
-          minInterval: 24 * 60 * 60 * 1000 // 24 hours
+          minInterval: 24 * 60 * 60 * 1000
         });
         console.log('Periodic sync registered');
       } else {
