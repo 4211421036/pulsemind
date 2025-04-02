@@ -496,11 +496,39 @@ h1, h2, h3 {
       .translate-btn .fas {
         font-size: 16px;
       }
+    .pwa-install-container {
+      bottom: 20px;
+      right: 20px;
+      left: auto;
+    }
+    .pwa-install-card {
+      width: 320px;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      position: relative;
+    }
 }
 
 @media (max-width: 768px) {
     .weekly-grid {
         grid-template-columns: repeat(4, 80px);
+    }
+    .pwa-install-container {
+      top: 20px;
+      left: 0;
+      right: 0;
+      padding: 0 20px;
+    }
+    .pwa-install-card {
+      width: 100%;
+      max-width: 400px;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      position: relative;
     }
 }
 
@@ -717,3 +745,61 @@ outline-offset: 2px;
 outline: 3px solid CanvasText;
 }
 }
+
+.pwa-install-container {
+    position: fixed;
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+  }
+
+  /* Common Elements */
+  .pwa-app-icon {
+    width: 48px;
+    height: 48px;
+    display: block;
+    margin: 0 auto 10px;
+  }
+  .pwa-app-title {
+    text-align: center;
+    margin: 0 0 8px;
+    color: #2c3e50;
+  }
+  .pwa-app-desc {
+    text-align: center;
+    color: #7f8c8d;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .pwa-button-group {
+    display: flex;
+    gap: 10px;
+  }
+  .pwa-later-btn, .pwa-install-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .pwa-later-btn {
+    background: #f1f2f6;
+    color: #7f8c8d;
+  }
+  .pwa-install-btn {
+    background: #4CAF50;
+    color: white;
+  }
+  .pwa-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #7f8c8d;
+  }
