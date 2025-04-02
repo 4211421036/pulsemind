@@ -1,0 +1,32 @@
+name: Generate Service Worker
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  generate-sw:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        
+    - name: Generate Service Worker
+      run: |
+        node generate-sw.js
+        cat sw.js
+        
+    - name: Commit changes
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add sw.js
+        git diff --quiet && git diff --staged --quiet || git commit -m "Auto-generated service worker [skip ci]"
+        git push
