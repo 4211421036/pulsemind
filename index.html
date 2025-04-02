@@ -1073,11 +1073,13 @@ const originalTexts = new Map();
 // Function to translate the UI
 function translateUI(language) {
   const dict = translations[language];
+  const langCode = language === 'english' ? 'en' : 'id';
   const elements = document.querySelectorAll('h1, h2, h3, h4, button, span, div.status, label, div.trend, p, a, li');
   
   elements.forEach(element => {
     // Skip the translation button itself
     if (element.id === 'translate-btn') return;
+    element.setAttribute('lang', langCode);
     
     // Store the original text if we haven't already
     if (!originalTexts.has(element)) {
@@ -1114,6 +1116,17 @@ function translateUI(language) {
   
   // Save language preference to localStorage
   localStorage.setItem('preferredLanguage', language);
+}
+// Fungsi untuk menghapus atribut lang yang tidak perlu (opsional)
+function cleanUpLangAttributes() {
+  const allElements = document.querySelectorAll('[lang]');
+  const mainLang = document.documentElement.lang;
+  
+  allElements.forEach(el => {
+    if (el.lang === mainLang) {
+      el.removeAttribute('lang'); // Hapus jika sama dengan bahasa dokumen utama
+    }
+  });
 }
 
 // Update the translate button based on current language
