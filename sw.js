@@ -1,4 +1,4 @@
-// Auto-generated Service Worker - 2025-04-02T12:42:31.610Z
+// Auto-generated Service Worker - 2025-04-02T12:42:55.741Z
 const CACHE_NAME = 'pulsemind-v1.2.0';
 const RUNTIME_CACHE = 'runtime-pulsemind';
 const NOTIFICATION_TITLE = 'Pengingat Harian';
@@ -10217,6 +10217,7 @@ const PRECACHE_URLS = [
   "/svgs/solid/yen-sign.svg",
   "/svgs/solid/yin-yang.svg",
   "/svgs/solid/z.svg",
+  "/sw.js",
   "/types/.eslintrc.yml",
   "/types/adapters.d.ts",
   "/types/animation.d.ts",
