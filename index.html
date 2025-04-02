@@ -734,7 +734,8 @@
                             </div>
                         </div>
                         
-                        <div class="stress-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0% stress level">
+                        <div class="stress-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" 
+                             aria-valuetext="0% stress level" aria-label="Current stress level">
                             <div class="stress-indicator" id="stress-indicator"></div>
                         </div>
                         <div class="stress-labels">
@@ -749,7 +750,7 @@
                         </div>
 
                         <h3><span class="fas fa-clock" aria-hidden="true"></span> Today's Forecast</h3>
-                        <div class="hourly-forecast" id="hourly-forecast" aria-live="polite">
+                        <div class="hourly-forecast" id="hourly-forecast" role="list" aria-label="Hourly stress forecast">
                             <!-- Will be populated by JavaScript -->
                         </div>
                     </div>
@@ -802,7 +803,7 @@
 
                     <div class="card weekly-card">
                         <h3><span class="fas fa-calendar-week" aria-hidden="true"></span> Weekly Overview</h3>
-                        <div class="weekly-grid" id="weekly-grid" role="grid">
+                        <div class="weekly-grid" id="weekly-grid" role="table" aria-label="Weekly stress overview">
                             <!-- Will be populated by JavaScript -->
                         </div>
                     </div>
@@ -1823,7 +1824,7 @@ function generateHourlyForecast() {
                 const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
                 
                 hours.push(`
-                    <div class="forecast-hour" role="listitem">
+                    <div class="forecast-hour" role="listitem" aria-label="${hour}:00 stress forecast ${stressLevel.toFixed(0)}%">
                         <div class="forecast-time">${hour}:00</div>
                         <div class="forecast-icon" style="background: ${status.color}" aria-hidden="true">
                             <i class="fas ${getIconForStatus(status.text)}"></i>
@@ -1866,7 +1867,7 @@ function generateHourlyForecast() {
             const status = getStatusForConductance(avg);
             
             forecast.push(`
-                <div class="forecast-hour" role="listitem">
+                <div class="forecast-hour" role="listitem" aria-label="${hour}:00 stress forecast ${stressLevel.toFixed(0)}%">
                     <div class="forecast-time">${hour}:00</div>
                     <div class="forecast-icon" style="background: ${status.color}" aria-hidden="true">
                         <i class="fas ${getIconForStatus(status.text)}"></i>
@@ -1891,13 +1892,18 @@ function generateWeeklyData() {
             // Fallback to default weekly data if not enough data
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             const today = new Date().getDay();
-            const weekData = days.map((day, index) => {
+            
+            // Create table structure with proper role hierarchy
+            let weekDataHTML = '<div role="row">';
+            
+            days.forEach((day, index) => {
                 const isToday = index === today;
                 const stressLevel = 50 + (Math.sin(index) * 20);
                 const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
                 
-                return `
-                    <div class="weekly-day ${isToday ? 'today' : ''}" role="gridcell" aria-selected="${isToday}">
+                weekDataHTML += `
+                    <div class="weekly-day ${isToday ? 'today' : ''}" role="cell" 
+                         aria-selected="${isToday}" aria-label="${day} stress level ${stressLevel.toFixed(0)}%">
                         <div class="day">${day}</div>
                         <div class="stress-icon" style="background: ${status.color}" aria-hidden="true">
                             <i class="fas ${getIconForStatus(status.text)}"></i>
@@ -1907,8 +1913,11 @@ function generateWeeklyData() {
                     </div>
                 `;
             });
+            
+            weekDataHTML += '</div>';
+            
             if (weeklyGrid) {
-                weeklyGrid.innerHTML = weekData.join('');
+                weeklyGrid.innerHTML = weekDataHTML;
             }
             return;
         }
@@ -1929,17 +1938,21 @@ function generateWeeklyData() {
             dailyAverages[day] = data.sum / data.count;
         }
         
-        // Generate weekly data
+        // Generate weekly data with proper table structure
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const today = new Date().getDay();
-        const weekData = days.map((day, index) => {
+        
+        let weekDataHTML = '<div role="row">';
+        
+        days.forEach((day, index) => {
             const isToday = index === today;
             const avg = dailyAverages[index] || 3.5; // Default if no data
             const stressLevel = calculateStressLevel(avg + (Math.sin(index) * 1.5));
             const status = getStatusForConductance(avg);
             
-            return `
-                <div class="weekly-day ${isToday ? 'today' : ''}" role="gridcell" aria-selected="${isToday}">
+            weekDataHTML += `
+                <div class="weekly-day ${isToday ? 'today' : ''}" role="cell" 
+                     aria-selected="${isToday}" aria-label="${day} stress level ${stressLevel.toFixed(0)}%">
                     <div class="day">${day}</div>
                     <div class="stress-icon" style="background: ${status.color}" aria-hidden="true">
                         <i class="fas ${getIconForStatus(status.text)}"></i>
@@ -1950,8 +1963,10 @@ function generateWeeklyData() {
             `;
         });
         
+        weekDataHTML += '</div>';
+        
         if (weeklyGrid) {
-            weeklyGrid.innerHTML = weekData.join('');
+            weeklyGrid.innerHTML = weekDataHTML;
         }
     } catch (error) {
         console.error('Error generating weekly data:', error);
@@ -2064,6 +2079,17 @@ function getColorForRecovery(recovery) {
     return 'var(--high-stress)';
 }
 
+function updateStressMeter(value) {
+    const stressIndicator = document.getElementById('stress-indicator');
+    const stressMeter = stressIndicator.parentElement;
+    
+    // Update visual appearance
+    stressIndicator.style.width = `${value}%`;
+    
+    // Update ARIA attributes for accessibility
+    stressMeter.setAttribute('aria-valuenow', value.toString());
+    stressMeter.setAttribute('aria-valuetext', `${value}% stress level`);
+}
 // Start data refresh
 function startDataRefresh() {
     const refreshInterval = setInterval(async () => {
