@@ -980,8 +980,9 @@ function createTranslationButton() {
   translationButton.title = 'Press T to toggle language (T)';
   translationButton.tabIndex = 0;
   
-  // Insert the button in the body
-  document.body.appendChild(translationButton);
+  // Insert in header for desktop, body for mobile (CSS will handle positioning)
+  const header = document.querySelector('header') || document.body;
+  header.appendChild(translationButton);
   
   return translationButton;
 }
@@ -1178,26 +1179,22 @@ function initTranslation() {
 }
 
 // Add CSS for the translation button
+// Add CSS for the translation button - UPDATED FIXED VERSION
 function addTranslationStyles() {
   const style = document.createElement('style');
   style.textContent = `
+    /* Base button styles */
     .translate-btn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
       background-color: #25548b;
       color: white;
       border: none;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       cursor: pointer;
       z-index: 100;
       transition: all 0.2s ease;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
     .translate-btn:hover, .translate-btn:focus {
@@ -1215,16 +1212,28 @@ function addTranslationStyles() {
       font-size: 20px;
     }
     
+    /* Mobile styles (default) */
+    .translate-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+    }
+    
     /* Desktop styles */
     @media (min-width: 769px) {
       .translate-btn {
         position: absolute;
         top: 20px;
         right: 20px;
+        bottom: auto;
+        border-radius: 4px;
         width: auto;
         height: auto;
         padding: 8px 16px;
-        border-radius: 4px;
+        gap: 8px;
       }
       
       .translate-btn .fas {
