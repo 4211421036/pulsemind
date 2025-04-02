@@ -1,4 +1,4 @@
-name: Generate Service Worker
+name: Generate Service Workers
 
 on:
   push:
