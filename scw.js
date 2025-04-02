@@ -79,7 +79,8 @@ self.addEventListener('activate', (event) => {
 async function initializeNotifications() {
   try {
     await cleanupOldNotifications();
-    await scheduleDailyNotification();
+    await schedulePeriodicNotification();
+    console.log('Notifications initialized');
   } catch (error) {
     console.error('Notification init failed:', error);
     showFallbackNotification();
@@ -93,34 +94,50 @@ async function cleanupOldNotifications() {
   notifications.forEach(n => n.close());
 }
 
-async function scheduleDailyNotification() {
-  const registration = await self.registration;
-  const target = getNextNotificationTime();
+// Fungsi untuk mengirim notifikasi setiap hari pada jam 8 pagi
+async function schedulePeriodicNotification() {
+  const now = new Date();
+  const targetTime = new Date(now);
+  targetTime.setHours(8, 0, 0, 0);
+  
+  // Jika waktu sekarang sudah melewati jam 8 pagi, jadwalkan untuk besok
+  if (now > targetTime) {
+    targetTime.setDate(targetTime.getDate() + 1);
+  }
+  
+  const timeUntilTarget = targetTime - now;
+  console.log(`Scheduling notification for ${targetTime}, in ${timeUntilTarget/1000/60} minutes`);
+  
+  // Menggunakan setTimeout untuk menjadwalkan notifikasi berikutnya
+  setTimeout(() => {
+    showNotification();
+    // Jadwalkan ulang untuk besok
+    schedulePeriodicNotification();
+  }, timeUntilTarget);
+}
 
+// Fungsi untuk menampilkan notifikasi
+async function showNotification() {
+  const registration = await self.registration;
+  
   try {
     await registration.showNotification(NOTIFICATION_TITLE, {
       tag: 'daily-reminder',
       body: 'Waktunya memeriksa GSR Anda!',
       icon: NOTIFICATION_ICON,
-      showTrigger: new TimestampTrigger(target.getTime()),
+      vibrate: [100, 50, 100], // Pola vibrasi untuk Android
+      badge: NOTIFICATION_ICON, // Badge icon untuk Android
+      renotify: true,
       actions: [
         { action: 'open', title: 'Buka' },
         { action: 'snooze', title: 'Tunda 10 Menit' }
       ]
     });
-    console.log('Notification scheduled for', target);
+    console.log('Notification shown');
   } catch (error) {
-    console.error('Notification scheduling failed:', error);
+    console.error('Notification display failed:', error);
     showFallbackNotification();
   }
-}
-
-function getNextNotificationTime() {
-  const now = new Date();
-  const target = new Date(now);
-  target.setHours(8, 0, 0, 0);
-  if (now > target) target.setDate(target.getDate() + 1);
-  return target;
 }
 
 function showFallbackNotification() {
@@ -128,12 +145,14 @@ function showFallbackNotification() {
     self.registration.showNotification(NOTIFICATION_TITLE, {
       body: 'Pengingat harian (fallback)',
       icon: NOTIFICATION_ICON,
+      vibrate: [100, 50, 100], // Pola vibrasi untuk Android
+      badge: NOTIFICATION_ICON, // Badge icon untuk Android
       actions: [
         { action: 'open', title: 'Buka' },
         { action: 'snooze', title: 'Tunda 10 Menit' }
       ]
     });
-  }, 30000); // Show after 30s if scheduling fails
+  }, 5000); // Show after 5s if scheduling fails
 }
 
 // ========== EVENT HANDLERS ========== //
@@ -143,7 +162,7 @@ self.addEventListener('notificationclick', (event) => {
   if (event.action === 'open') {
     clients.openWindow('/');
   } else if (event.action === 'snooze') {
-    event.waitUntil(handleSnooze(event.notification));
+    event.waitUntil(handleSnooze());
   } else {
     clients.openWindow('/');
   }
@@ -155,41 +174,41 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-self.addEventListener('message', (event) => {
-  if (event.data.type === 'TRIGGER_UPDATE') {
-    event.waitUntil(updateCharts());
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'daily-reminder') {
+    event.waitUntil(showNotification());
   }
 });
 
 // ========== BUSINESS LOGIC ========== //
-async function handleSnooze(notification) {
+async function handleSnooze() {
   const cache = await caches.open(RUNTIME_CACHE);
   const response = await cache.match('snooze-count');
   let count = response ? parseInt(await response.text()) : 0;
 
   if (count < MAX_SNOOZE_COUNT) {
-    const newTime = Date.now() + 600000; // 10 minutes
-    
-    try {
-      await self.registration.showNotification(NOTIFICATION_TITLE, {
-        tag: 'daily-reminder',
-        body: 'Notifikasi ditunda 10 menit',
+    setTimeout(() => {
+      self.registration.showNotification(NOTIFICATION_TITLE, {
+        tag: 'daily-reminder-snoozed',
+        body: 'Waktunya memeriksa GSR Anda! (ditunda)',
         icon: NOTIFICATION_ICON,
-        showTrigger: new TimestampTrigger(newTime),
-        actions: notification.actions
+        vibrate: [100, 50, 100],
+        badge: NOTIFICATION_ICON,
+        actions: [
+          { action: 'open', title: 'Buka' },
+          { action: 'snooze', title: 'Tunda 10 Menit' }
+        ]
       });
-      
-      await cache.put('snooze-count', new Response((count + 1).toString()));
-    } catch (error) {
-      console.error('Snooze failed:', error);
-      showFallbackNotification();
-    }
+    }, 10 * 60 * 1000); // 10 menit
+    
+    await cache.put('snooze-count', new Response((count + 1).toString()));
   }
 }
 
 async function handleDailySync() {
   await resetSnoozeCounter();
   await updateCharts();
+  await showNotification();
 }
 
 async function resetSnoozeCounter() {
@@ -236,7 +255,15 @@ async function handleOtherRequest(request) {
   } catch {
     return (await caches.match(request)) || Response.error();
   }
-}`;
+}
+self.addEventListener('activate', () => {
+  // Coba langsung tampilkan notifikasi untuk memastikan izin
+  self.registration.showNotification('PulseMind Aktif', {
+    body: 'Aplikasi siap memberikan pengingat harian',
+    icon: NOTIFICATION_ICON
+  });
+});
+`;
 }
 
 // Main execution
