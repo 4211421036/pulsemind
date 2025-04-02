@@ -698,6 +698,13 @@
     font-size: 13px;
     opacity: 0.8;
 }
+        .horizontal-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    overflow-x: auto;
+}
 </style>
     <script src="https://www.googletagmanager.com/gtag/js?id=G-10CPK9SS6N" async></script><script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-10CPK9SS6N")</script>
     <meta name="google-site-verification" content="OYdjPwgIjGMAbQd3CGwM_l20jLNRRp84mEl3kw06DMg" />
@@ -1894,16 +1901,17 @@ function generateWeeklyData() {
             const today = new Date().getDay();
             
             // Create table structure with proper role hierarchy
-            let weekDataHTML = '<div role="row">';
+            let weekDataHTML = '<div role="row" class="horizontal-row">';
             
             days.forEach((day, index) => {
                 const isToday = index === today;
                 const stressLevel = 50 + (Math.sin(index) * 20);
                 const status = getStatusForConductance(stressLevel * GSR_THRESHOLDS.HIGH_STRESS / 100);
                 
+                // Use data-today instead of aria-selected
                 weekDataHTML += `
-                    <div class="weekly-day ${isToday ? 'today' : ''}" role="cell" 
-                         aria-selected="${isToday}" aria-label="${day} stress level ${stressLevel.toFixed(0)}%">
+                    <div class="weekly-day ${isToday ? 'today' : ''}" role="cell" data-today="${isToday}"
+                         aria-label="${day} stress level ${stressLevel.toFixed(0)}%">
                         <div class="day">${day}</div>
                         <div class="stress-icon" style="background: ${status.color}" aria-hidden="true">
                             <i class="fas ${getIconForStatus(status.text)}"></i>
@@ -1942,7 +1950,7 @@ function generateWeeklyData() {
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const today = new Date().getDay();
         
-        let weekDataHTML = '<div role="row">';
+        let weekDataHTML = '<div role="row" class="horizontal-row">';
         
         days.forEach((day, index) => {
             const isToday = index === today;
@@ -1951,8 +1959,8 @@ function generateWeeklyData() {
             const status = getStatusForConductance(avg);
             
             weekDataHTML += `
-                <div class="weekly-day ${isToday ? 'today' : ''}" role="cell" 
-                     aria-selected="${isToday}" aria-label="${day} stress level ${stressLevel.toFixed(0)}%">
+                <div class="weekly-day ${isToday ? 'today' : ''}" role="cell" data-today="${isToday}"
+                     aria-label="${day} stress level ${stressLevel.toFixed(0)}%">
                     <div class="day">${day}</div>
                     <div class="stress-icon" style="background: ${status.color}" aria-hidden="true">
                         <i class="fas ${getIconForStatus(status.text)}"></i>
