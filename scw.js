@@ -14,6 +14,9 @@ const EXCLUDE_PATTERNS = [
   /package(-lock)?\.json$/,
   /node_modules\//
 ];
+const NOTIFICATION_TITLE = 'Pengingat Harian';
+const NOTIFICATION_ICON = '/svgs/solid/bell.svg';
+const MAX_SNOOZE_COUNT = 3;
 
 // Get all files in directory recursively
 function getFiles(dir, fileList = []) {
@@ -48,6 +51,9 @@ function generateServiceWorker(files) {
 const CACHE_NAME = '${CACHE_NAME}';
 const RUNTIME_CACHE = '${RUNTIME_CACHE}';
 const PRECACHE_URLS = ${JSON.stringify(allUrls, null, 2)};
+const NOTIFICATION_TITLE = '${NOTIFICATION_TITLE}';
+const NOTIFICATION_ICON = '${NOTIFICATION_ICON}';
+const MAX_SNOOZE_COUNT = ${MAX_SNOOZE_COUNT};
 
 // Install Phase - Precaching Critical Resources
 self.addEventListener('install', event => {
@@ -71,7 +77,10 @@ self.addEventListener('activate', event => {
       return Promise.all(cachesToDelete.map(cacheToDelete => {
         return caches.delete(cacheToDelete);
       }));
-    }).then(() => self.clients.claim())
+    }).then(() => {
+      self.clients.claim();
+      scheduleDailyNotification();
+    })
   );
 });
 
@@ -134,6 +143,98 @@ async function syncGSRData() {
     }
   }
 }
+
+// Scheduled Notification Logic
+const scheduleDailyNotification = async () => {
+  try {
+    const registration = await self.registration;
+    const now = new Date();
+    const target = new Date();
+    
+    // Set target to next 08:00
+    target.setHours(8, 0, 0, 0);
+    if (now > target) target.setDate(target.getDate() + 1);
+
+    // Check existing alarms
+    const alarms = await registration.getNotifications({
+      tag: 'daily-reminder'
+    });
+    
+    if (alarms.length === 0) {
+      await registration.showNotification(NOTIFICATION_TITLE, {
+        tag: 'daily-reminder',
+        body: 'Waktunya memeriksa GSR Anda!',
+        icon: NOTIFICATION_ICON,
+        showTrigger: new TimestampTrigger(target.getTime()),
+        actions: [
+          { action: 'open', title: 'Buka' },
+          { action: 'snooze', title: 'Tunda 10 Menit' }
+        ]
+      });
+      console.log('Scheduled daily notification for', target);
+    }
+  } catch (error) {
+    console.error('Notification scheduling failed:', error);
+  }
+};
+
+// Notification Click Handler
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  
+  if (event.action === 'open') {
+    event.waitUntil(
+      clients.openWindow('/')
+    );
+  } else if (event.action === 'snooze') {
+    event.waitUntil(
+      (async () => {
+        const cache = await caches.open(RUNTIME_CACHE);
+        const response = await cache.match('snooze-count');
+        let currentCount = 0;
+        
+        if (response) {
+          currentCount = parseInt(await response.text());
+        }
+        
+        if (currentCount < MAX_SNOOZE_COUNT) {
+          // Schedule new notification
+          const newTime = Date.now() + 600000; // 10 menit
+          await self.registration.showNotification(NOTIFICATION_TITLE, {
+            tag: 'daily-reminder',
+            body: 'Notifikasi ditunda 10 menit',
+            icon: NOTIFICATION_ICON,
+            showTrigger: new TimestampTrigger(newTime),
+            actions: event.notification.actions
+          });
+          
+          // Update snooze count
+          const newResponse = new Response((currentCount + 1).toString());
+          await cache.put('snooze-count', newResponse);
+          console.log('Notification snoozed, count:', currentCount + 1);
+        }
+      })()
+    );
+  } else {
+    // Default action when notification is clicked (no buttons)
+    event.waitUntil(
+      clients.openWindow('/')
+    );
+  }
+});
+
+// Reset snooze counter daily
+self.addEventListener('periodicsync', event => {
+  if (event.tag === 'reset-snooze-counter') {
+    event.waitUntil(
+      caches.open(RUNTIME_CACHE).then(cache => 
+        cache.delete('snooze-count')
+      ).then(() => 
+        console.log('Snooze counter reset')
+      )
+    );
+  }
+});
 
 // Periodic Sync (for fresh data)
 self.addEventListener('periodicsync', event => {
