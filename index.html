@@ -703,6 +703,25 @@
     justify-content: space-between;
     width: 100%;
 }
+        .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #4285f4;
+    color: white;
+    padding: 8px;
+    z-index: 100;
+    transition: top 0.3s ease;
+    border-radius: 0 0 4px 0;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 2px solid #4285f4;
+    outline-offset: 2px;
+}
 </style>
     <script src="https://www.googletagmanager.com/gtag/js?id=G-10CPK9SS6N" async></script><script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-10CPK9SS6N")</script>
     <meta name="google-site-verification" content="OYdjPwgIjGMAbQd3CGwM_l20jLNRRp84mEl3kw06DMg" />
@@ -970,6 +989,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+    // This JavaScript is optional but enhances the skip link functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Get the skip link
+    const skipLink = document.querySelector('.skip-link');
+    
+    if (skipLink) {
+        // Add click handler to set focus to main content
+        skipLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get the target element
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                // Set focus to the target element
+                targetElement.setAttribute('tabindex', '-1');
+                targetElement.focus();
+                
+                // Remove tabindex after focus (optional)
+                setTimeout(function() {
+                    targetElement.removeAttribute('tabindex');
+                }, 1000);
+            }
+        });
+    }
+});
 // Initialize all charts with accessibility features
 function initCharts() {
     try {
