@@ -704,27 +704,27 @@
 </head>
 <body>
     <noscript><iframe height=0 src="https://www.googletagmanager.com/ns.html?id=GTM-NN8S46CR" style=display:none;visibility:hidden width=0></iframe></noscript>
-    <div class="dashboard">
-    <div class="nav-tabs">
-        <div class="nav-tab active" data-tab="overview">Overview</div>
-        <div class="nav-tab" data-tab="trends">Trends</div>
-        <div class="nav-tab" data-tab="insights">Insights</div>
+    <div class="dashboard" role="main" aria-label="Mental Health Dashboard">
+    <div class="nav-tabs" role="tablist">
+        <div class="nav-tab active" role="tab" id="tab-overview" aria-selected="true" aria-controls="overview" tabindex="0">Overview</div>
+        <div class="nav-tab" role="tab" id="tab-trends" aria-selected="false" aria-controls="trends" tabindex="0">Trends</div>
+        <div class="nav-tab" role="tab" id="tab-insights" aria-selected="false" aria-controls="insights" tabindex="0">Insights</div>
     </div>
 
     <!-- Overview Tab (existing content) -->
-    <div class="tab-content active" id="overview">
+    <div class="tab-content active" id="overview" role="tabpanel" aria-labelledby="tab-overview">
         <div class="dashboard-grid">
             <div class="main-column">
                 <div class="card main-card">
                     <div class="header">
-                        <h2><i class="fas fa-brain"></i> Real-time Mental State</h2>
+                        <h2><i class="fas fa-brain" aria-hidden="true"></i> Real-time Mental State</h2>
                         <div class="real-time">
-                            <div id="current-stress">0%</div>
-                            <div class="status" id="current-status">Calibrating...</div>
+                            <div id="current-stress" aria-live="polite">0%</div>
+                            <div class="status" id="current-status" aria-live="polite">Calibrating...</div>
                         </div>
                     </div>
                     
-                    <div class="stress-meter">
+                    <div class="stress-meter" role="meter" aria-label="Stress level meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                         <div class="stress-indicator" id="stress-indicator"></div>
                     </div>
                     <div class="stress-labels">
@@ -735,18 +735,18 @@
                     </div>
                     
                     <div class="chart-container">
-                        <canvas id="gsrChart"></canvas>
+                        <canvas id="gsrChart" aria-label="GSR Chart" role="img"></canvas>
                     </div>
 
-                    <h3><i class="fas fa-clock"></i> Today's Forecast</h3>
-                    <div class="hourly-forecast" id="hourly-forecast">
+                    <h3><i class="fas fa-clock" aria-hidden="true"></i> Today's Forecast</h3>
+                    <div class="hourly-forecast" id="hourly-forecast" aria-label="Hourly stress forecast">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
 
                 <div class="card recommendations-card">
-                    <h3><i class="fas fa-lightbulb"></i> Recommendations</h3>
-                    <div class="recommendations" id="recommendations">
+                    <h3><i class="fas fa-lightbulb" aria-hidden="true"></i> Recommendations</h3>
+                    <div class="recommendations" id="recommendations" aria-live="polite">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
@@ -754,43 +754,43 @@
 
             <div class="side-column">
                 <div class="card metrics-card">
-                    <h3><i class="fas fa-chart-line"></i> Key Metrics</h3>
+                    <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Key Metrics</h3>
                     <div class="metric-grid">
                         <div class="metric-item">
-                            <label>Avg. Stress (24h)</label>
-                            <div class="value" id="avg-stress">0%</div>
-                            <div class="trend" id="avg-trend">
-                                <i class="fas fa-minus"></i> Stable
+                            <label id="label-avg-stress">Avg. Stress (24h)</label>
+                            <div class="value" id="avg-stress" aria-labelledby="label-avg-stress">0%</div>
+                            <div class="trend" id="avg-trend" aria-live="polite">
+                                <i class="fas fa-minus" aria-hidden="true"></i> Stable
                             </div>
                         </div>
                         <div class="metric-item">
-                            <label>Peak Today</label>
-                            <div class="value" id="peak-stress">0μS</div>
-                            <div class="trend" id="peak-trend">
-                                <i class="fas fa-minus"></i> Stable
+                            <label id="label-peak-stress">Peak Today</label>
+                            <div class="value" id="peak-stress" aria-labelledby="label-peak-stress">0μS</div>
+                            <div class="trend" id="peak-trend" aria-live="polite">
+                                <i class="fas fa-minus" aria-hidden="true"></i> Stable
                             </div>
                         </div>
                         <div class="metric-item">
-                            <label>Stress Duration</label>
-                            <div class="value" id="stress-duration">0 min</div>
-                            <div class="trend" id="duration-trend">
-                                <i class="fas fa-minus"></i> Stable
+                            <label id="label-stress-duration">Stress Duration</label>
+                            <div class="value" id="stress-duration" aria-labelledby="label-stress-duration">0 min</div>
+                            <div class="trend" id="duration-trend" aria-live="polite">
+                                <i class="fas fa-minus" aria-hidden="true"></i> Stable
                             </div>
                         </div>
                         <div class="metric-item">
-                            <label>Recovery Rate</label>
-                            <div class="value" id="recovery-rate">0%</div>
-                            <div class="trend" id="recovery-trend">
-                                <i class="fas fa-minus"></i> Stable
+                            <label id="label-recovery-rate">Recovery Rate</label>
+                            <div class="value" id="recovery-rate" aria-labelledby="label-recovery-rate">0%</div>
+                            <div class="trend" id="recovery-trend" aria-live="polite">
+                                <i class="fas fa-minus" aria-hidden="true"></i> Stable
                             </div>
                         </div>
                     </div>
-                    <button class="btn-action" id="detail-btn">View Full Analysis</button>
+                    <button class="btn-action" id="detail-btn" aria-expanded="false" aria-controls="detail-modal">View Full Analysis</button>
                 </div>
 
                 <div class="card weekly-card">
-                    <h3><i class="fas fa-calendar-week"></i> Weekly Overview</h3>
-                    <div class="weekly-grid" id="weekly-grid">
+                    <h3><i class="fas fa-calendar-week" aria-hidden="true"></i> Weekly Overview</h3>
+                    <div class="weekly-grid" id="weekly-grid" aria-label="Weekly stress overview">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
@@ -799,38 +799,38 @@
     </div>
 
     <!-- Trends Tab (new content) -->
-    <div class="tab-content" id="trends">
+    <div class="tab-content" id="trends" role="tabpanel" aria-labelledby="tab-trends" hidden>
         <div class="dashboard-grid">
             <div class="main-column">
                 <div class="card">
-                    <h3><i class="fas fa-chart-line"></i> Long-term Stress Trends</h3>
+                    <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Long-term Stress Trends</h3>
                     <div class="chart-container">
-                        <canvas id="trendChart"></canvas>
+                        <canvas id="trendChart" aria-label="Long-term stress trends chart" role="img"></canvas>
                     </div>
                 </div>
                 
                 <div class="card">
-                    <h3><i class="fas fa-calendar-alt"></i> Monthly Stress Patterns</h3>
+                    <h3><i class="fas fa-calendar-alt" aria-hidden="true"></i> Monthly Stress Patterns</h3>
                     <div class="chart-container">
-                        <canvas id="monthlyChart"></canvas>
+                        <canvas id="monthlyChart" aria-label="Monthly stress patterns chart" role="img"></canvas>
                     </div>
                 </div>
             </div>
             
             <div class="side-column">
                 <div class="card">
-                    <h3><i class="fas fa-clock"></i> Time-of-Day Analysis</h3>
+                    <h3><i class="fas fa-clock" aria-hidden="true"></i> Time-of-Day Analysis</h3>
                     <div class="chart-container">
-                        <canvas id="timeOfDayChart"></canvas>
+                        <canvas id="timeOfDayChart" aria-label="Time-of-day stress analysis chart" role="img"></canvas>
                     </div>
-                    <div class="time-of-day-insights" id="time-of-day-insights">
+                    <div class="time-of-day-insights" id="time-of-day-insights" aria-live="polite">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
                 
                 <div class="card">
-                    <h3><i class="fas fa-chart-bar"></i> Stress Triggers</h3>
-                    <div class="stress-triggers" id="stress-triggers">
+                    <h3><i class="fas fa-chart-bar" aria-hidden="true"></i> Stress Triggers</h3>
+                    <div class="stress-triggers" id="stress-triggers" aria-live="polite">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
@@ -839,35 +839,35 @@
     </div>
 
     <!-- Insights Tab (new content) -->
-    <div class="tab-content" id="insights">
+    <div class="tab-content" id="insights" role="tabpanel" aria-labelledby="tab-insights" hidden>
         <div class="dashboard-grid">
             <div class="main-column">
                 <div class="card">
-                    <h3><i class="fas fa-lightbulb"></i> Key Insights</h3>
-                    <div class="insights-container" id="key-insights">
+                    <h3><i class="fas fa-lightbulb" aria-hidden="true"></i> Key Insights</h3>
+                    <div class="insights-container" id="key-insights" aria-live="polite">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
                 
                 <div class="card">
-                    <h3><i class="fas fa-project-diagram"></i> Stress Correlations</h3>
+                    <h3><i class="fas fa-project-diagram" aria-hidden="true"></i> Stress Correlations</h3>
                     <div class="chart-container">
-                        <canvas id="correlationChart"></canvas>
+                        <canvas id="correlationChart" aria-label="Stress correlations chart" role="img"></canvas>
                     </div>
                 </div>
             </div>
             
             <div class="side-column">
                 <div class="card">
-                    <h3><i class="fas fa-trophy"></i> Progress & Achievements</h3>
-                    <div class="achievements-container" id="achievements">
+                    <h3><i class="fas fa-trophy" aria-hidden="true"></i> Progress & Achievements</h3>
+                    <div class="achievements-container" id="achievements" aria-live="polite">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
                 
                 <div class="card">
-                    <h3><i class="fas fa-bell"></i> Personalized Alerts</h3>
-                    <div class="alerts-container" id="personalized-alerts">
+                    <h3><i class="fas fa-bell" aria-hidden="true"></i> Personalized Alerts</h3>
+                    <div class="alerts-container" id="personalized-alerts" aria-live="polite">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
@@ -877,12 +877,12 @@
 </div>
 
 <!-- Modal -->
-<div class="modal-overlay" id="modal-overlay"></div>
-<div class="modal" id="detail-modal">
+<div class="modal-overlay" id="modal-overlay" aria-hidden="true"></div>
+<div class="modal" id="detail-modal" role="dialog" aria-labelledby="modal-title" aria-modal="true" hidden>
     <div class="modal-content">
         <div class="modal-header">
-            <h3><i class="fas fa-chart-bar"></i> Mental Health Analysis</h3>
-            <button class="close-modal" id="close-modal">&times;</button>
+            <h3 id="modal-title"><i class="fas fa-chart-bar" aria-hidden="true"></i> Mental Health Analysis</h3>
+            <button class="close-modal" id="close-modal" aria-label="Close modal">&times;</button>
         </div>
         <div class="analysis-grid" id="analysis-grid">
             <!-- Will be populated by JavaScript -->
@@ -1189,7 +1189,7 @@ function generateInsightsContent() {
             stressTriggersEl.innerHTML = `
                 <div class="insight-item">
                     <div class="insight-icon" style="background: var(--high-stress)">
-                        <i class="fas fa-briefcase"></i>
+                        <i aria-hidden="true" class="fas fa-briefcase"></i>
                     </div>
                     <div class="insight-content">
                         <h4>Work Meetings</h4>
@@ -1198,7 +1198,7 @@ function generateInsightsContent() {
                 </div>
                 <div class="insight-item">
                     <div class="insight-icon" style="background: var(--stressed)">
-                        <i class="fas fa-mobile-alt"></i>
+                        <i aria-hidden="true" class="fas fa-mobile-alt"></i>
                     </div>
                     <div class="insight-content">
                         <h4>Screen Time</h4>
@@ -1214,7 +1214,7 @@ function generateInsightsContent() {
             keyInsightsEl.innerHTML = `
                 <div class="insight-item positive">
                     <div class="insight-icon">
-                        <i class="fas fa-arrow-down"></i>
+                        <i aria-hidden="true" class="fas fa-arrow-down"></i>
                     </div>
                     <div class="insight-content">
                         <h4>Improving Trend</h4>
@@ -1223,7 +1223,7 @@ function generateInsightsContent() {
                 </div>
                 <div class="insight-item negative">
                     <div class="insight-icon">
-                        <i class="fas fa-exclamation"></i>
+                        <i aria-hidden="true" class="fas fa-exclamation"></i>
                     </div>
                     <div class="insight-content">
                         <h4>Midweek Spike</h4>
@@ -1276,7 +1276,7 @@ function generateInsightsContent() {
             alertsEl.innerHTML = `
                 <div class="alert-item">
                     <div class="alert-icon">
-                        <i class="fas fa-bell"></i>
+                        <i aria-hidden="true" class="fas fa-bell"></i>
                     </div>
                     <div class="alert-content">
                         <h4>Upcoming Stressful Period</h4>
@@ -1560,7 +1560,7 @@ function generateHourlyForecast() {
                     <div class="forecast-hour">
                         <div class="forecast-time">${hour}:00</div>
                         <div class="forecast-icon" style="background: ${status.color}">
-                            <i class="fas ${getIconForStatus(status.text)}"></i>
+                            <i aria-hidden="true" class="fas ${getIconForStatus(status.text)}"></i>
                         </div>
                         <div class="forecast-value">${stressLevel.toFixed(0)}%</div>
                     </div>
@@ -1603,7 +1603,7 @@ function generateHourlyForecast() {
                 <div class="forecast-hour">
                     <div class="forecast-time">${hour}:00</div>
                     <div class="forecast-icon" style="background: ${status.color}">
-                        <i class="fas ${getIconForStatus(status.text)}"></i>
+                        <i aria-hidden="true" class="fas ${getIconForStatus(status.text)}"></i>
                     </div>
                     <div class="forecast-value">${stressLevel.toFixed(0)}%</div>
                 </div>
@@ -1634,7 +1634,7 @@ function generateWeeklyData() {
                     <div class="weekly-day ${isToday ? 'today' : ''}">
                         <div class="day">${day}</div>
                         <div class="stress-icon" style="background: ${status.color}">
-                            <i class="fas ${getIconForStatus(status.text)}"></i>
+                            <i aria-hidden="true" class="fas ${getIconForStatus(status.text)}"></i>
                         </div>
                         <div class="stress-level">${stressLevel.toFixed(0)}%</div>
                         <div class="stress-range">${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%</div>
@@ -1676,7 +1676,7 @@ function generateWeeklyData() {
                 <div class="weekly-day ${isToday ? 'today' : ''}">
                     <div class="day">${day}</div>
                     <div class="stress-icon" style="background: ${status.color}">
-                        <i class="fas ${getIconForStatus(status.text)}"></i>
+                        <i aria-hidden="true" class="fas ${getIconForStatus(status.text)}"></i>
                     </div>
                     <div class="stress-level">${stressLevel.toFixed(0)}%</div>
                     <div class="stress-range">${(stressLevel - 10).toFixed(0)}-${(stressLevel + 10).toFixed(0)}%</div>
@@ -1842,7 +1842,7 @@ function populateModalContent() {
         
         analysisGrid.innerHTML = `
             <div class="analysis-item">
-                <label><i class="fas fa-wave-square"></i> Average SCL</label>
+                <label><i aria-hidden="true" class="fas fa-wave-square"></i> Average SCL</label>
                 <div class="value">${stats.avgSCL.toFixed(2)} μS</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / GSR_THRESHOLDS.HIGH_STRESS) * 100)}%; 
@@ -1851,7 +1851,7 @@ function populateModalContent() {
                 <small>Normal range: 1-5 μS</small>
             </div>
             <div class="analysis-item">
-                <label><i class="fas fa-bolt"></i> Total SCR Events</label>
+                <label><i aria-hidden="true" class="fas fa-bolt"></i> Total SCR Events</label>
                 <div class="value">${historicalData.reduce((sum, item) => sum + (item.scrEvents || 0), 0)}</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${Math.min(100, (stats.avgSCL / 5) * 100)}%; 
@@ -1878,7 +1878,7 @@ function populateModalContent() {
                 <small>Above threshold</small>
             </div>
             <div class="analysis-item">
-                <label><i class="fas fa-heartbeat"></i> Stress Variability</label>
+                <label><i aria-hidden="true" class="fas fa-heartbeat"></i> Stress Variability</label>
                 <div class="value">${calculateVariability(historicalData).toFixed(2)}</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${Math.min(100, (calculateVariability(historicalData) / 5) * 100)}%; 
@@ -1887,7 +1887,7 @@ function populateModalContent() {
                 <small>Lower is better</small>
             </div>
             <div class="analysis-item">
-                <label><i class="fas fa-undo"></i> Recovery Efficiency</label>
+                <label><i aria-hidden="true" class="fas fa-undo"></i> Recovery Efficiency</label>
                 <div class="value">${stats.recoveryRate.toFixed(1)}%</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${stats.recoveryRate}%; 
