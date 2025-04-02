@@ -2,8 +2,11 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const CACHE_NAME = 'pulsemind-v1.1.0';
+const CACHE_NAME = 'pulsemind-v1.2.0';
 const RUNTIME_CACHE = 'runtime-pulsemind';
+const NOTIFICATION_TITLE = 'Pengingat Harian';
+const NOTIFICATION_ICON = '/svgs/solid/bell.svg';
+const MAX_SNOOZE_COUNT = 3;
 const EXCLUDE_PATTERNS = [
   /^\.github\//,
   /^\.git\//,
@@ -11,14 +14,12 @@ const EXCLUDE_PATTERNS = [
   /\.cff$/,
   /LICENSE$/,
   /generate-sw\.js$/,
+  /sw\.js$/,
   /package(-lock)?\.json$/,
   /node_modules\//
 ];
-const NOTIFICATION_TITLE = 'Pengingat Harian';
-const NOTIFICATION_ICON = '/svgs/solid/bell.svg';
-const MAX_SNOOZE_COUNT = 3;
 
-// Get all files in directory recursively
+// Get all files recursively
 function getFiles(dir, fileList = []) {
   const files = fs.readdirSync(dir);
   
@@ -29,11 +30,7 @@ function getFiles(dir, fileList = []) {
     if (fs.statSync(filePath).isDirectory()) {
       getFiles(filePath, fileList);
     } else {
-      // Check if file should be excluded
-      const shouldExclude = EXCLUDE_PATTERNS.some(pattern => 
-        pattern.test(relativePath)
-      );
-      
+      const shouldExclude = EXCLUDE_PATTERNS.some(pattern => pattern.test(relativePath));
       if (!shouldExclude) {
         fileList.push('/' + relativePath);
       }
@@ -46,213 +43,200 @@ function getFiles(dir, fileList = []) {
 // Generate the service worker content
 function generateServiceWorker(files) {
   const allUrls = ['/'].concat(files);
-  
-  return `// Auto-generated Service Worker for PulseMind GSR Monitor
+
+  return `// Auto-generated Service Worker - ${new Date().toISOString()}
 const CACHE_NAME = '${CACHE_NAME}';
 const RUNTIME_CACHE = '${RUNTIME_CACHE}';
-const PRECACHE_URLS = ${JSON.stringify(allUrls, null, 2)};
 const NOTIFICATION_TITLE = '${NOTIFICATION_TITLE}';
 const NOTIFICATION_ICON = '${NOTIFICATION_ICON}';
 const MAX_SNOOZE_COUNT = ${MAX_SNOOZE_COUNT};
+const PRECACHE_URLS = ${JSON.stringify(allUrls, null, 2)};
 
-// Install Phase - Precaching Critical Resources
-self.addEventListener('install', event => {
+// ========== CORE FUNCTIONALITY ========== //
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('[ServiceWorker] Pre-caching offline page');
-        return cache.addAll(PRECACHE_URLS);
-      })
+      .then(cache => cache.addAll(PRECACHE_URLS))
       .then(() => self.skipWaiting())
   );
 });
 
-// Activate Phase - Cache Cleanup
-self.addEventListener('activate', event => {
-  const currentCaches = [CACHE_NAME, RUNTIME_CACHE];
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
-      return cacheNames.filter(cacheName => !currentCaches.includes(cacheName));
-    }).then(cachesToDelete => {
-      return Promise.all(cachesToDelete.map(cacheToDelete => {
-        return caches.delete(cacheToDelete);
-      }));
+      return Promise.all(
+        cacheNames
+          .filter(name => ![CACHE_NAME, RUNTIME_CACHE].includes(name))
+          .map(name => caches.delete(name))
+      );
     }).then(() => {
       self.clients.claim();
-      scheduleDailyNotification();
+      initializeNotifications();
     })
   );
 });
 
-// Fetch Handler with Network-First Strategy
-self.addEventListener('fetch', event => {
-  // API Requests
-  if (event.request.url.includes('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // Clone the response for cache
-          const responseClone = response.clone();
-          caches.open(RUNTIME_CACHE)
-            .then(cache => cache.put(event.request, responseClone));
-          return response;
-        })
-        .catch(() => {
-          // Fallback to cached API responses
-          return caches.match(event.request)
-            .then(response => response || caches.match('/pulsemind/assets/fallback-data.json'));
-        })
-    );
-  }
-  // Static Assets (Cache-First)
-  else if (PRECACHE_URLS.some(url => event.request.url.includes(url))) {
-    event.respondWith(
-      caches.match(event.request)
-        .then(cachedResponse => cachedResponse || fetch(event.request))
-    );
-  }
-  // All Other Requests (Network-First)
-  else {
-    event.respondWith(
-      fetch(event.request)
-        .catch(() => caches.match(event.request))
-    );
-  }
-});
-
-// Background Sync for Offline Data
-self.addEventListener('sync', event => {
-  if (event.tag === 'sync-gsr-data') {
-    event.waitUntil(syncGSRData());
-  }
-});
-
-async function syncGSRData() {
-  const cache = await caches.open(RUNTIME_CACHE);
-  const requests = await cache.keys();
-  const apiRequests = requests.filter(request => request.url.includes('/api/'));
-  
-  for (const request of apiRequests) {
-    try {
-      const response = await fetch(request);
-      if (!response.ok) throw new Error('Network response was not ok');
-      await cache.delete(request);
-    } catch (error) {
-      console.error('Sync failed for:', request.url, error);
-      return Promise.reject();
-    }
+// ========== NOTIFICATION SYSTEM ========== //
+async function initializeNotifications() {
+  try {
+    await cleanupOldNotifications();
+    await scheduleDailyNotification();
+  } catch (error) {
+    console.error('Notification init failed:', error);
+    showFallbackNotification();
   }
 }
 
-// Scheduled Notification Logic
-const scheduleDailyNotification = async () => {
-  try {
-    const registration = await self.registration;
-    const now = new Date();
-    const target = new Date();
-    
-    // Set target to next 08:00
-    target.setHours(8, 0, 0, 0);
-    if (now > target) target.setDate(target.getDate() + 1);
+async function cleanupOldNotifications() {
+  const notifications = await self.registration.getNotifications({
+    tag: 'daily-reminder'
+  });
+  notifications.forEach(n => n.close());
+}
 
-    // Check existing alarms
-    const alarms = await registration.getNotifications({
-      tag: 'daily-reminder'
+async function scheduleDailyNotification() {
+  const registration = await self.registration;
+  const target = getNextNotificationTime();
+
+  try {
+    await registration.showNotification(NOTIFICATION_TITLE, {
+      tag: 'daily-reminder',
+      body: 'Waktunya memeriksa GSR Anda!',
+      icon: NOTIFICATION_ICON,
+      showTrigger: new TimestampTrigger(target.getTime()),
+      actions: [
+        { action: 'open', title: 'Buka' },
+        { action: 'snooze', title: 'Tunda 10 Menit' }
+      ]
     });
-    
-    if (alarms.length === 0) {
-      await registration.showNotification(NOTIFICATION_TITLE, {
-        tag: 'daily-reminder',
-        body: 'Waktunya memeriksa GSR Anda!',
-        icon: NOTIFICATION_ICON,
-        showTrigger: new TimestampTrigger(target.getTime()),
-        actions: [
-          { action: 'open', title: 'Buka' },
-          { action: 'snooze', title: 'Tunda 10 Menit' }
-        ]
-      });
-      console.log('Scheduled daily notification for', target);
-    }
+    console.log('Notification scheduled for', target);
   } catch (error) {
     console.error('Notification scheduling failed:', error);
+    showFallbackNotification();
   }
-};
+}
 
-// Notification Click Handler
-self.addEventListener('notificationclick', event => {
+function getNextNotificationTime() {
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(8, 0, 0, 0);
+  if (now > target) target.setDate(target.getDate() + 1);
+  return target;
+}
+
+function showFallbackNotification() {
+  setTimeout(() => {
+    self.registration.showNotification(NOTIFICATION_TITLE, {
+      body: 'Pengingat harian (fallback)',
+      icon: NOTIFICATION_ICON,
+      actions: [
+        { action: 'open', title: 'Buka' },
+        { action: 'snooze', title: 'Tunda 10 Menit' }
+      ]
+    });
+  }, 30000); // Show after 30s if scheduling fails
+}
+
+// ========== EVENT HANDLERS ========== //
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   
   if (event.action === 'open') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
+    clients.openWindow('/');
   } else if (event.action === 'snooze') {
-    event.waitUntil(
-      (async () => {
-        const cache = await caches.open(RUNTIME_CACHE);
-        const response = await cache.match('snooze-count');
-        let currentCount = 0;
-        
-        if (response) {
-          currentCount = parseInt(await response.text());
-        }
-        
-        if (currentCount < MAX_SNOOZE_COUNT) {
-          // Schedule new notification
-          const newTime = Date.now() + 600000; // 10 menit
-          await self.registration.showNotification(NOTIFICATION_TITLE, {
-            tag: 'daily-reminder',
-            body: 'Notifikasi ditunda 10 menit',
-            icon: NOTIFICATION_ICON,
-            showTrigger: new TimestampTrigger(newTime),
-            actions: event.notification.actions
-          });
-          
-          // Update snooze count
-          const newResponse = new Response((currentCount + 1).toString());
-          await cache.put('snooze-count', newResponse);
-          console.log('Notification snoozed, count:', currentCount + 1);
-        }
-      })()
-    );
+    event.waitUntil(handleSnooze(event.notification));
   } else {
-    // Default action when notification is clicked (no buttons)
-    event.waitUntil(
-      clients.openWindow('/')
-    );
+    clients.openWindow('/');
   }
 });
 
-// Reset snooze counter daily
-self.addEventListener('periodicsync', event => {
-  if (event.tag === 'reset-snooze-counter') {
-    event.waitUntil(
-      caches.open(RUNTIME_CACHE).then(cache => 
-        cache.delete('snooze-count')
-      ).then(() => 
-        console.log('Snooze counter reset')
-      )
-    );
+self.addEventListener('sync', (event) => {
+  if (['daily-sync', 'visibility-sync'].includes(event.tag)) {
+    event.waitUntil(handleDailySync());
   }
 });
 
-// Periodic Sync (for fresh data)
-self.addEventListener('periodicsync', event => {
-  if (event.tag === 'update-gsr-charts') {
+self.addEventListener('message', (event) => {
+  if (event.data.type === 'TRIGGER_UPDATE') {
     event.waitUntil(updateCharts());
   }
 });
 
-function updateCharts() {
-  return clients.matchAll({type: 'window'})
-    .then(windowClients => {
-      windowClients.forEach(windowClient => {
-        windowClient.postMessage({
-          type: 'CHART_UPDATE',
-          data: {forceRefresh: true}
-        });
+// ========== BUSINESS LOGIC ========== //
+async function handleSnooze(notification) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const response = await cache.match('snooze-count');
+  let count = response ? parseInt(await response.text()) : 0;
+
+  if (count < MAX_SNOOZE_COUNT) {
+    const newTime = Date.now() + 600000; // 10 minutes
+    
+    try {
+      await self.registration.showNotification(NOTIFICATION_TITLE, {
+        tag: 'daily-reminder',
+        body: 'Notifikasi ditunda 10 menit',
+        icon: NOTIFICATION_ICON,
+        showTrigger: new TimestampTrigger(newTime),
+        actions: notification.actions
       });
-    });
+      
+      await cache.put('snooze-count', new Response((count + 1).toString()));
+    } catch (error) {
+      console.error('Snooze failed:', error);
+      showFallbackNotification();
+    }
+  }
+}
+
+async function handleDailySync() {
+  await resetSnoozeCounter();
+  await updateCharts();
+}
+
+async function resetSnoozeCounter() {
+  const cache = await caches.open(RUNTIME_CACHE);
+  await cache.delete('snooze-count');
+}
+
+async function updateCharts() {
+  const clients = await self.clients.matchAll();
+  clients.forEach(client => {
+    client.postMessage({ type: 'CHART_UPDATE', data: { forceRefresh: true } });
+  });
+}
+
+// ========== FETCH HANDLER ========== //
+self.addEventListener('fetch', (event) => {
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(handleApiRequest(event.request));
+  } else if (PRECACHE_URLS.some(url => event.request.url.includes(url))) {
+    event.respondWith(handleStaticRequest(event.request));
+  } else {
+    event.respondWith(handleOtherRequest(event.request));
+  }
+});
+
+async function handleApiRequest(request) {
+  try {
+    const response = await fetch(request);
+    const clone = response.clone();
+    caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone));
+    return response;
+  } catch {
+    return (await caches.match(request)) || Response.error();
+  }
+}
+
+async function handleStaticRequest(request) {
+  return (await caches.match(request)) || fetch(request);
+}
+
+async function handleOtherRequest(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    return (await caches.match(request)) || Response.error();
+  }
 }`;
 }
 
@@ -261,4 +245,8 @@ const allFiles = getFiles('.');
 const swContent = generateServiceWorker(allFiles);
 
 fs.writeFileSync('sw.js', swContent);
-console.log('sw.js generated successfully with', allFiles.length, 'files to cache');
+console.log('✅ sw.js generated with', allFiles.length, 'precached files');
+console.log('⚠️ Make sure to:');
+console.log('1. Add manifest.json to your project');
+console.log('2. Include notification icons at /svgs/solid/bell.svg');
+console.log('3. Register the SW in your main HTML file');
