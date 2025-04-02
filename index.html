@@ -1825,97 +1825,120 @@ function loadSampleData() {
     }
 }
 </script>
+<!-- Add these elements somewhere in your body -->
+<button id="enable-sync-btn" style="display: none;">Enable Background Sync</button>
+<div id="pwa-install-container"></div>
+
 <script>
-// Enhanced PWA Installation and Service Worker Registration
+// Enhanced Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      // Register Service Worker
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
-      });
-      console.log('SW registered with scope:', registration.scope);
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('SW registered');
 
-      // Handle PWA Installation
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        console.log('PWA install prompt available');
-        // You can show your custom install button here
-      });
-
-      // Request Notifications Permission
+      // Initialize PWA installation
+      initPWAInstallation();
+      
+      // Initialize notifications and sync
       if ('Notification' in window) {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          console.log('Notification permission granted');
-          
-          // Try Periodic Sync with fallback
           await setupPeriodicSync(registration);
         }
       }
     } catch (error) {
-      console.error('Service Worker registration failed:', error);
+      console.error('SW registration failed:', error);
       implementSyncFallback();
     }
   });
 }
 
+// Improved PWA installation
+function initPWAInstallation() {
+  let deferredPrompt;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    const installContainer = document.getElementById('pwa-install-container');
+    installContainer.innerHTML = `
+      <button id="install-btn" 
+              style="padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 5px;">
+        Install PulseMind App
+      </button>
+    `;
+    
+    document.getElementById('install-btn').addEventListener('click', async () => {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('User accepted install');
+      }
+      installContainer.innerHTML = '';
+    });
+  });
+}
+
+// Enhanced Sync Setup
 async function setupPeriodicSync(registration) {
+  if (!('periodicSync' in registration)) {
+    console.log('Periodic Sync not supported');
+    implementSyncFallback();
+    return;
+  }
+
   try {
-    if ('periodicSync' in registration) {
-      const status = await navigator.permissions.query({
-        name: 'periodic-background-sync'
+    const status = await navigator.permissions.query({
+      name: 'periodic-background-sync'
+    });
+    
+    if (status.state === 'granted') {
+      await registration.periodicSync.register('reset-snooze-counter', {
+        minInterval: 24 * 60 * 60 * 1000
       });
-      
-      if (status.state === 'granted') {
+      console.log('Periodic sync registered');
+    } else {
+      console.log('Showing sync permission button');
+      const syncBtn = document.getElementById('enable-sync-btn');
+      syncBtn.style.display = 'block';
+      syncBtn.onclick = async () => {
         await registration.periodicSync.register('reset-snooze-counter', {
           minInterval: 24 * 60 * 60 * 1000
         });
-        console.log('Periodic sync registered');
-      } else {
-        console.warn('Periodic Sync permission not granted');
-        implementSyncFallback();
-      }
-    } else {
-      console.warn('Periodic Sync not supported');
+        syncBtn.style.display = 'none';
+      };
       implementSyncFallback();
     }
   } catch (error) {
-    console.warn('Periodic Sync setup failed:', error);
+    console.error('Sync setup error:', error);
     implementSyncFallback();
   }
 }
 
+// Fallback implementation
 function implementSyncFallback() {
-  console.log('Implementing fallback sync strategy');
+  console.log('Using fallback sync strategy');
   
-  // Fallback 1: Scheduled sync using setTimeout
-  function scheduleDailySync() {
+  // Daily sync at 8AM
+  function scheduleDaily() {
     const now = new Date();
     const target = new Date();
-    target.setHours(8, 0, 0, 0); // 8 AM
+    target.setHours(8, 0, 0, 0);
     if (now > target) target.setDate(target.getDate() + 1);
-    
-    const delay = target - now;
     
     setTimeout(async () => {
       if ('serviceWorker' in navigator) {
-        try {
-          const reg = await navigator.serviceWorker.ready;
-          await reg.sync.register('daily-sync');
-          console.log('Fallback daily sync triggered');
-        } catch (error) {
-          console.error('Fallback sync failed:', error);
-        }
+        const reg = await navigator.serviceWorker.ready;
+        reg.sync.register('daily-sync');
       }
-      scheduleDailySync(); // Reschedule for next day
-    }, delay);
+      scheduleDaily();
+    }, target - now);
   }
   
-  // Fallback 2: Sync when app is opened
-  window.addEventListener('visibilitychange', () => {
+  // Sync when app becomes visible
+  document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       navigator.serviceWorker.ready.then(reg => {
         reg.sync.register('visibility-sync');
@@ -1923,7 +1946,7 @@ function implementSyncFallback() {
     }
   });
   
-  scheduleDailySync();
+  scheduleDaily();
 }
 </script>
 </body>
