@@ -1,4 +1,4 @@
-// Auto-generated Service Worker - 2025-04-02T13:19:10.951Z
+// Auto-generated Service Worker - 2025-04-02T13:29:57.062Z
 const CACHE_NAME = 'pulsemind-v1.2.0';
 const RUNTIME_CACHE = 'runtime-pulsemind';
 const NOTIFICATION_TITLE = 'Pengingat Harian';
